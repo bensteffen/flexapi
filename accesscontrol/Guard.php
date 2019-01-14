@@ -1,6 +1,6 @@
 <?php
 
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__ . '/../../../autoload.php';
 use \Firebase\JWT\JWT;
 
 abstract class Guard {

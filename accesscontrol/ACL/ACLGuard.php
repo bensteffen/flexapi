@@ -6,7 +6,7 @@ include_once __DIR__ . '/../../database/query.php';
 include_once __DIR__ . '/User.php';
 include_once __DIR__ . '/Permission.php';
 include_once __DIR__ . '/JwtBlackList.php';
-include_once __DIR__ . '/../../../utils/utils.php';
+include_once __DIR__ . '/../../../bs-php-utils/utils.php';
 
 class ACLGuard extends Guard {
     protected $acModel;

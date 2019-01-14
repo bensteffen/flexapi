@@ -1,9 +1,9 @@
 <?php
 
 include_once __DIR__ . "./DataReferenceSet.php";
-include_once __DIR__ . "/../../utils/Options.php";
+include_once __DIR__ . "/../../bs-php-utils/Options.php";
 include_once __DIR__ . "/../accesscontrol/WorstGuardAtAll.php";
-include_once __DIR__ . "/../../utils/utils.php";
+include_once __DIR__ . "/../../bs-php-utils/utils.php";
 
 class DataModel {
     protected $connection = null;
