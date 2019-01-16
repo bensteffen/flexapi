@@ -1,6 +1,5 @@
 <?php
 
-include_once __DIR__ . '/api.php';
 include_once __DIR__ . '/requestutils/jwt.php';
 
 header("Access-Control-Allow-Origin: *");

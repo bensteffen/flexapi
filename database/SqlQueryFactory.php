@@ -1,7 +1,7 @@
 <?php
 
 include_once __DIR__ . '/sql.php';
-include_once __DIR__ . '/../../utils/utils.php';
+include_once __DIR__ . '/../../bs-php-utils/utils.php';
 
 class SqlQueryFactory {
     public static function makeCreateQuery($entity) {

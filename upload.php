@@ -1,14 +1,14 @@
 <?php
 
-include_once __DIR__ . '/api.php';
+include_once __DIR__ . '/FlexAPI.php';
 include_once __DIR__ . '/requestutils/jwt.php';
 include_once __DIR__ . '/../bs-php-utils/utils.php';
 
 try {
 
-    API::guard()->login(['username' => 'floderflo', 'password' => '123']);
-    // API::guard()->login(['username' => 'bensteffen', 'password' => 'abc']);
-    // API::guard()->login(getJWT());
+    FlexAPI::guard()->login(['username' => 'floderflo', 'password' => '123']);
+    // FlexAPI::guard()->login(['username' => 'bensteffen', 'password' => 'abc']);
+    // FlexAPI::guard()->login(getJWT());
 
     $response = [
         'serverity' => 1,
@@ -37,7 +37,7 @@ try {
         fwrite($fid, $file);
     fclose($fid);
 
-    $resourcePath = $uploadFolder.API::guard()->getUsername().'/'.$resourcePath;
+    $resourcePath = $uploadFolder.FlexAPI::guard()->getUsername().'/'.$resourcePath;
     $completePath = $rootFolder.$resourcePath;
     if (!is_dir($completePath)) {
         mkdir($completePath, 0777, true);
@@ -46,7 +46,7 @@ try {
     $savePath = $completePath.$saveName;
     rename($tempName, $savePath);
 
-    $id = API::dataModel()->insert('upload', [
+    $id = FlexAPI::dataModel()->insert('upload', [
         'name' => $fileName,
         'format' => $fileFormat,
         'source' => $resourcePath.$saveName
