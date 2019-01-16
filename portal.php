@@ -1,5 +1,6 @@
 <?php
 
+include_once __DIR__ . '/FlexAPI.php';
 include_once __DIR__ . '/requestutils/jwt.php';
 
 header("Access-Control-Allow-Origin: *");
@@ -22,18 +23,18 @@ try {
     $request = (array) json_decode(file_get_contents("php://input"));
 
     if ($request["concern"] === "login") {
-        $token = API::guard()->login($request);
+        $token = FlexAPI::guard()->login($request);
         $response = [
             "message" => "Login sucessfull",
             "token" => $token,
         ];
 
     } elseif ($request["concern"] === "logout") {
-        API::guard()->logout(getJWT());
+        FlexAPI::guard()->logout(getJWT());
         $response = ["message" => "Logout sucessfull"];
 
     } elseif ($request["concern"] === "register") {
-        API::guard()->registerUser($request['username'], $request['password'], $request['accessLevel']);
+        FlexAPI::guard()->registerUser($request['username'], $request['password'], $request['accessLevel']);
         $response = ["message" => "User was created."];
 
     } elseif ($request["concern"] === "publish") {
