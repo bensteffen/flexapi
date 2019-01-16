@@ -1,10 +1,10 @@
 <?php
 
 class FlexAPI {
-    protected $apiDefinition = null;
+    protected static $apiDefinition = null;
 
     public static function define($generatorFunction) {
-        $this->apiDefinition = $generatorFunction();
+        FlexAPI::$apiDefinition = $generatorFunction();
     }
 
     public static function dataModel() {
