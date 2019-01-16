@@ -25,8 +25,8 @@ try {
 
     $resourcePath = $formatFolders[$fileFormat];
 
-    $rootFolder = "../../";
-    $uploadFolder = "upload/";
+    $rootFolder = "../../"; // folder including vendor-folder
+    $uploadFolder = FlexAPI::get('uploadFolder');
     
     $file = file_get_contents("php://input");
     $tempName = tempnam($rootFolder.$uploadFolder,'');
