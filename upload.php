@@ -6,10 +6,6 @@ include_once __DIR__ . '/../bs-php-utils/utils.php';
 
 try {
 
-    FlexAPI::guard()->login(['username' => 'floderflo', 'password' => '123']);
-    // FlexAPI::guard()->login(['username' => 'bensteffen', 'password' => 'abc']);
-    // FlexAPI::guard()->login(getJWT());
-
     $response = [
         'serverity' => 1,
         'message' => "Upload successful",
@@ -25,19 +21,19 @@ try {
 
     $resourcePath = $formatFolders[$fileFormat];
 
-    $rootFolder = "../../"; // folder including vendor-folder
+    $rootFolder = FlexAPI::get('appRoot');
     $uploadFolder = FlexAPI::get('uploadFolder');
     
     $file = file_get_contents("php://input");
     $tempName = tempnam($rootFolder.$uploadFolder,'');
     $fid = fopen($tempName, 'w');
-        if (!$fid) {
-            throw(new Exception("Couldn't create file", 500));
-        }
-        fwrite($fid, $file);
+    if (!$fid) {
+        throw(new Exception("Couldn't create file", 500));
+    }
+    fwrite($fid, $file);
     fclose($fid);
 
-    $resourcePath = $uploadFolder.FlexAPI::guard()->getUsername().'/'.$resourcePath;
+    $resourcePath = $uploadFolder.'/'.FlexAPI::guard()->getUsername().'/'.$resourcePath;
     $completePath = $rootFolder.$resourcePath;
     if (!is_dir($completePath)) {
         mkdir($completePath, 0777, true);
