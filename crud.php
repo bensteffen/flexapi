@@ -13,17 +13,8 @@ if ($method === 'OPTIONS') {
 }
 
 try {
-    // $jwt = getJWT();
-    // if (!$jwt) {
-    //     throw(new Exception('Missing JWT', 401));
-    // }
-    // FlexAPI::guard()->login($jwt);
-    FlexAPI::guard()->login(['username' => 'floderflo', 'password' => '123']);
-    // FlexAPI::guard()->login(['username' => 'bensteffen', 'password' => 'abc']);
-    // FlexAPI::guard()->login(['username' => 'admin', 'password' => 'pw']);
-    $parameters = parseUrlParameters($_GET);
-
     $response = [];
+    $parameters = parseUrlParameters($_GET);
 
     switch ($method) {
         case 'GET':
