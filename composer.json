@@ -1,0 +1,28 @@
+{
+    "name": "bensteffen/flexapi",
+    "type": "package",
+    "repositories": {
+        "bs-php-utils": {
+            "type": "package",
+            "package": {
+                "name": "bensteffen/bs-php-utils",
+                "version": "1.0",
+                "source": {
+                    "type": "git",
+                    "url": "https://github.com/bensteffen/bs-php-utils",
+                    "reference": "origin/master"
+                }
+            }
+        }
+    },
+    "require": {
+        "firebase/php-jwt": "^5.0",
+        "bensteffen/bs-php-utils": "^1.0"
+    },
+    "authors": [
+        {
+            "name": "ben-steffen",
+            "email": "me@ben-steffen.de"
+        }
+    ]
+}
