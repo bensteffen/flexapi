@@ -28,7 +28,9 @@ function parseUrlParameters($queries) {
 
     $flatten = false;
     if (array_key_exists('flatten', $queries)) {
-        $flatten = true;
+        if ($queries['flatten'] === 'singleResult' || $queries['flatten'] === 'singleField') {
+            $flatten = $queries['flatten'];
+        }
     }
 
     return [

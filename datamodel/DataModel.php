@@ -128,10 +128,12 @@ class DataModel {
             }
         }
 
-        if (count($data) !== 1 || !$flatten) {
-            // return $data;
-        } else { // count($data) === 1 && flatten
+        if ($flatten === 'singleResult' && count($data) === 1) {
             $data = $data[0];
+        } elseif ($flatten === 'singleField') {
+            foreach ($data as $i => $d) {
+                $data[$i] = $d[0];
+            }
         }
 
         if (count($data) === 0) {
@@ -271,7 +273,7 @@ class DataModel {
             $content = $this->read($reference['referencedEntity'], [
                 'references' => $config,
                 'filter' => [$referenceIdName => $referenceId],
-                'flatten' => true
+                'flatten' => 'singleResult'
             ]);
         } elseif ($config['format'] === "url") {
             $content = $this->makeResourceUrl($reference['referencedEntity'], $referenceIdName, $referenceId);
