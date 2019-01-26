@@ -81,6 +81,10 @@ class DataEntity {
     public function update($updateEvent) {
 
     }
+
+    // public function fromJson($fileName) {
+
+    // }
 }
 
 ?>
