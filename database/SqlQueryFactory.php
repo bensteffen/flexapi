@@ -5,12 +5,17 @@ include_once __DIR__ . '/../../bs-php-utils/utils.php';
 
 class SqlQueryFactory {
     public static function makeCreateQuery($entity) {
-        $sqlFormat = "CREATE TABLE IF NOT EXISTS `%s` (%s, PRIMARY KEY (%s) ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;";
+        $pkQuery = "";
+        $primaryKeys = $entity->primaryKeys();
+        if (count($primaryKeys) > 0) {
+            $pkQuery = sprintf(', PRIMARY KEY (%s)', Sql::Sequence($primaryKeys, function($k) { return Sql::Column($k); })->toQuery());
+        }
+        $sqlFormat = "CREATE TABLE IF NOT EXISTS `%s` (%s%s) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;";
         return sprintf(
             $sqlFormat, 
             $entity->getName(),
             SqlQueryFactory::fieldSetToCreateString($entity->getFieldSet()),
-            Sql::Sequence($entity->primaryKeys(), function($k) { return Sql::Column($k); })->toQuery()
+            $pkQuery
         );
     }
 
