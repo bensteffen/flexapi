@@ -70,19 +70,20 @@ class QueryCondition extends QueryElement {
 }
 
 class QueryConditionSequence extends QueryElement {
-    public $conditions;
+    public $operator;
+    public $items;
 
-    public function __construct($conditions = []) {
-        $this->conditions = $conditions;
+    public function __construct($operator, $items = []) {
+        $this->items = $items;
     }
 
-    public function addItem($operator, $condition) {
-        array_push($this->conditions, ["concatOperator" => $operator, "condition" => $condition]);
+    public function addItem($item) {
+        array_push($this->items, $item);
     }
 
     public function toQuery() {
-        foreach ($this->conditions as $item) {
-            $item['condition']->setCreator($this->creator);
+        foreach ($this->items as $item) {
+            $item->setCreator($this->creator);
         }
         return $this->creator->makeConditionSequence($this);
     }

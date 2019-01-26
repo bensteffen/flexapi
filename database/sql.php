@@ -35,7 +35,7 @@ class SqlCreator implements QueryCreator {
         if ($op === 'not') {
             return sprintf("NOT %s = %s", $cond->itemA->toQuery(), $cond->itemB->toQuery());
         } else {
-            $operatorMap = ['eq' => '=', 'gr' => '>', 'sm' => '<', 'greq' => '>=', 'smeq' => '<='];
+            $operatorMap = ['eq' => '=', 'gr' => '>', 'ls' => '<', 'ge' => '>=', 'le' => '<='];
             return sprintf("%s %s %s", $cond->itemA->toQuery(), $operatorMap[$op], $cond->itemB->toQuery());
         }
     }
@@ -49,15 +49,9 @@ class SqlCreator implements QueryCreator {
     }
 
     public function makeConditionSequence($seq) {
-        $str = "";
-        foreach ($seq->conditions as $i => $item) {
-            if ($i === 0) {
-                $str .= $item['condition']->toQuery();
-            } else {
-                $str .= sprintf(" %s %s", $item['concatOperator'], $item['condition']->toQuery());
-            }
-        }
-        return $str;
+        $operatorMap = ['and' => ' AND ', 'or' => ' OR '];
+        $queries = array_map(function($item) { return $item->toQuery(); }, $seq->conditions);
+        return implode($operatorMap[$seq->operator], $queries);
     }
 
     protected function addTics($s) {
