@@ -34,7 +34,7 @@ class ACLGuard extends Guard {
         if (is_array($auth)) {
             $result = $this->acModel->read('user', [
                 'filter' => [ 'name' => $auth['username'] ],
-                'flatten' => true
+                'flatten' => 'singleResult'
             ]);
             if (!password_verify($auth['password'], $result['password'])) {
                 throw(new Exception("Bad user name or password.", 401));
@@ -55,7 +55,7 @@ class ACLGuard extends Guard {
             $result = $this->acModel->read('user', [
                 'filter' => [ 'name' => $payload['user'] ],
                 'selection' => ['accessLevel'],
-                'flatten' => true
+                'flatten' => 'singleResult'
             ]);
             $this->username = $payload['user'];
             $this->userAccessLevel = $result['accessLevel'];
@@ -92,11 +92,7 @@ class ACLGuard extends Guard {
         $userCondition = new QueryCondition(new QueryColumn('user','permission'), 'eq', new QueryValue($this->username));
         $nameCondition = new QueryCondition(new QueryColumn('entityName','permission'), 'eq', new QueryValue($entityName));
         $idCondition = new QueryCondition(new QueryColumn('entityId','permission'), 'eq', new QueryColumn($pKeys[0],$entityName));
-        $joinCondition = new QueryConditionSequence([
-            ['condition' => $userCondition],
-            ['condition' => $nameCondition, 'concatOperator' => 'AND'],
-            ['condition' => $idCondition, 'concatOperator' => 'AND']
-        ]);
+        $joinCondition = new QueryConditionSequence('and', [$userCondition, $nameCondition, $idCondition]);
 
         $filter = array_map(function($f) use($entityName) {
             $f['entityName'] = $entityName;
