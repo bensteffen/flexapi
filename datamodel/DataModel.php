@@ -81,6 +81,9 @@ class DataModel {
         if (!$this->guard->userCanInsert()) {
             throw(new Exception("User is not allowed to insert into $entityName.", 403));
         }
+
+        $data = $this->insertRegularReferences($entityName, $data);
+
         $this->throwExceptionOnBadReference($entityName, $data);
         $id = $this->connection->insertIntoDatabase($this->getEntity($entityName), $data);
         $this->notifyObservers([
@@ -91,7 +94,33 @@ class DataModel {
             'context'     => 'onInsert',
             'metaData'    => $metaData
         ]);
+
+        $this->insertInverseReferences($entityName, $id, $data);
+
         return $id;
+    }
+
+    private function insertRegularReferences($entityName, $data) {
+        foreach ($this->references->getRegular($entityName) as $ref) {
+            $field = $ref['referenceField'];
+            if (array_key_exists($field, $data) && is_array($data[$field])) {
+                $data[$field] = $this->insert($ref['referencedEntity'], $data[$field]);
+            }
+        }
+        return $data;
+    }
+
+    private function insertInverseReferences($entityName, $entityId, $data) {
+        foreach ($this->references->getInverse($entityName) as $ref) {
+            $field = $ref['containerField'];
+            if (array_key_exists($field, $data) && is_array($data[$field])) {
+                foreach ($data[$field] as $refData) {
+                    $refData[$ref['referenceField']] = $entityId;
+                    $this->insert($ref['referencedEntity'], $refData);
+                }
+            }
+        }
+        return $data;
     }
 
     public function read($entityName, $options = []) {    
@@ -132,7 +161,8 @@ class DataModel {
             $data = $data[0];
         } elseif ($flatten === 'singleField') {
             foreach ($data as $i => $d) {
-                $data[$i] = $d[0];
+                $k = array_keys($d);
+                $data[$i] = $d[$k[0]];
             }
         }
 
