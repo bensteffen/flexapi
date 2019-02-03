@@ -18,7 +18,11 @@ interface QueryCreator {
     function makeCondition($conditionElement);
     function makeAssignment($assignmentElement);
     function makeSequence($sequenceElement);
-    function makeConditionSequence($conditionSequenceElement);
+    // function makeConditionSequence($conditionSequenceElement);
+    function makeAnd($andElement);
+    function makeOr($orElement);
+    function makeNot($notElement);
+    function makeGroup($groupElement);
 }
 
 class QueryValue extends QueryElement {
@@ -51,15 +55,13 @@ class QueryColumn extends QueryElement {
 
 class QueryCondition extends QueryElement {
     public $itemA;
-    public $operator = 'eq';
+    public $operator;
     public $itemB;
 
-    public function __construct($itemA, $operator, $itemB) {
-        if ($itemA && $operator && $itemB) {
-            $this->itemA = $itemA;
-            $this->operator = $operator;
-            $this->itemB = $itemB;
-        }
+    public function __construct($itemA, $itemB, $operator = 'eq') {
+        $this->itemA = $itemA;
+        $this->operator = $operator;
+        $this->itemB = $itemB;
     }
 
     public function toQuery() {
@@ -69,25 +71,83 @@ class QueryCondition extends QueryElement {
     }
 }
 
-class QueryConditionSequence extends QueryElement {
-    public $operator;
-    public $items;
+class QueryAnd extends QueryElement {
+    public $itemA;
+    public $itemB;
 
-    public function __construct($operator, $items = []) {
-        $this->items = $items;
-    }
-
-    public function addItem($item) {
-        array_push($this->items, $item);
+    public function __construct($itemA, $itemB) {
+        $this->itemA = $itemA;
+        $this->itemB = $itemB;
     }
 
     public function toQuery() {
-        foreach ($this->items as $item) {
-            $item->setCreator($this->creator);
-        }
-        return $this->creator->makeConditionSequence($this);
+        $this->itemA->setCreator($this->creator);
+        $this->itemB->setCreator($this->creator);
+        return $this->creator->makeAnd($this);
     }
 }
+
+class QueryOr extends QueryElement {
+    public $itemA;
+    public $itemB;
+
+    public function __construct($itemA, $itemB) {
+        $this->itemA = $itemA;
+        $this->itemB = $itemB;
+    }
+
+    public function toQuery() {
+        $this->itemA->setCreator($this->creator);
+        $this->itemB->setCreator($this->creator);
+        return $this->creator->makeOr($this);
+    }
+}
+
+class QueryNot extends QueryElement {
+    public $item;
+
+    public function __construct($item) {
+        $this->item = $item;
+    }
+
+    public function toQuery() {
+        $this->item->setCreator($this->creator);
+        return $this->creator->makeNot($this);
+    }
+}
+
+class QueryGroup extends QueryElement {
+    public $item;
+
+    public function __construct($item) {
+        $this->item = $item;
+    }
+
+    public function toQuery() {
+        $this->item->setCreator($this->creator);
+        return $this->creator->makeGroup($this);
+    }
+}
+
+// class QueryConditionSequence extends QueryElement {
+//     public $operator;
+//     public $items;
+
+//     public function __construct($operator, $items = []) {
+//         $this->items = $items;
+//     }
+
+//     public function addItem($item) {
+//         array_push($this->items, $item);
+//     }
+
+//     public function toQuery() {
+//         foreach ($this->items as $item) {
+//             $item->setCreator($this->creator);
+//         }
+//         return $this->creator->makeConditionSequence($this);
+//     }
+// }
 
 class QueryAssignment extends QueryElement {
     public $column;

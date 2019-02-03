@@ -1,5 +1,48 @@
 <?php
 
+include_once __DIR__ . "/../../bs-php-utils/utils.php";
+
+function parseArrayString($str) {
+    if (preg_match("/^\[.*\]$/", $str)) {
+        $str = substr($str,1,strlen($str)-2);
+        $chars = str_split($str);
+        $inQuotes = false;
+        $array = [];
+        $buffer = '';
+        foreach ($chars as $char) {
+            $isQuote = $char === "'";
+            $isComma = $char === ',';
+            if ($isQuote) {
+                $inQuotes = !$inQuotes;
+            }
+            if (!$isComma || $inQuotes) {
+                $buffer .= $char;
+            } else {
+                array_push($array, $buffer);
+                $buffer = '';
+            }
+        }
+        array_push($array, $buffer);
+        return $array;
+    }
+    return null;
+}
+
+function parseAssocString($str) {
+    preg_match("/\[([\w]+,[\w]+)(;([\w]+,[\w]+))*\]/", $str ,$result);
+    if (count($result) > 0) {
+        $content = preg_replace("/\[|\]/", "", $result[0]);
+        $pairs = explode(';', $content);
+        $assocArray = [];
+        foreach($pairs as $pair) {
+            $pairArray = parseArrayString("[$pair]");
+            $assocArray[$pairArray[0]] = $pairArray[1];
+        }
+        return $assocArray;
+    }
+    return null;
+}
+
 function parseUrlParameters($queries) {
     $do = 'read';
     if (array_key_exists('do', $queries)) {

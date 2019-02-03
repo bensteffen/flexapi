@@ -2,7 +2,7 @@
 
 include_once __DIR__ . '/../Guard.php';
 include_once __DIR__ . '/../../datamodel/DataModel.php';
-include_once __DIR__ . '/../../database/query.php';
+include_once __DIR__ . '/../../database/FilterParser.php';
 include_once __DIR__ . '/User.php';
 include_once __DIR__ . '/Permission.php';
 include_once __DIR__ . '/JwtBlackList.php';
@@ -89,10 +89,15 @@ class ACLGuard extends Guard {
             throw("A permission can only be attached to entities with exactly 1 primary key.");
         }
 
-        $userCondition = new QueryCondition(new QueryColumn('user','permission'), 'eq', new QueryValue($this->username));
-        $nameCondition = new QueryCondition(new QueryColumn('entityName','permission'), 'eq', new QueryValue($entityName));
-        $idCondition = new QueryCondition(new QueryColumn('entityId','permission'), 'eq', new QueryColumn($pKeys[0],$entityName));
-        $joinCondition = new QueryConditionSequence('and', [$userCondition, $nameCondition, $idCondition]);
+        // $userCondition = new QueryCondition(new QueryColumn('user','permission'), 'eq', new QueryValue($this->username));
+        // $nameCondition = new QueryCondition(new QueryColumn('entityName','permission'), 'eq', new QueryValue($entityName));
+        // $idCondition = new QueryCondition(new QueryColumn('entityId','permission'), 'eq', new QueryColumn($pKeys[0],$entityName));
+        // $joinCondition = new QueryConditionSequence('and', [$userCondition, $nameCondition, $idCondition]);
+
+        $joinCondition = new QueryAnd(FilterParser::parseFilterArray([
+            ['permission.user' => $this->username],
+            ['permission.entityName' => $entityName]
+        ]), new QueryColumn($pKeys[0],$entityName));
 
         $filter = array_map(function($f) use($entityName) {
             $f['entityName'] = $entityName;

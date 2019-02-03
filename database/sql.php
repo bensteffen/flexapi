@@ -48,11 +48,27 @@ class SqlCreator implements QueryCreator {
         return implode(', ', array_map(function($item) { return $item->toQuery(); } , $seq->items));
     }
 
-    public function makeConditionSequence($seq) {
-        $operatorMap = ['and' => ' AND ', 'or' => ' OR '];
-        $queries = array_map(function($item) { return $item->toQuery(); }, $seq->conditions);
-        return implode($operatorMap[$seq->operator], $queries);
+    public function makeAnd($and) {
+        return sprintf("%s AND %s", $and->itemA->toQuery(), $and->itemB->toQuery());
     }
+
+    public function makeOr($or) {
+        return sprintf("%s OR %s", $or->itemA->toQuery(), $or->itemB->toQuery());
+    }
+
+    public function makeNot($not) {
+        return sprintf("NOT %s", $not->item->toQuery());
+    }
+
+    public function makeGroup($group) {
+        return sprintf("(%s)", $group->item->toQuery());
+    }
+
+    // public function makeConditionSequence($seq) {
+    //     $operatorMap = ['and' => ' AND ', 'or' => ' OR '];
+    //     $queries = array_map(function($item) { return $item->toQuery(); }, $seq->items);
+    //     return implode($operatorMap[$seq->operator], $queries);
+    // }
 
     protected function addTics($s) {
         if ($s && $this->useTics && $s !== '*') {
@@ -88,12 +104,28 @@ class Sql {
         return Sql::attachSqlCreator(new QueryCondition($itemA, $operator, $itemB));
     }
 
-    public static function ConditionSequence($items, $converter = null) {
-        if ($converter) {
-            $items = array_map($converter, $items);
-        }
-        return Sql::attachSqlCreator(new QueryConditionSequence($items));
+    public static function AndOperation($itemA, $itemB) {
+        return Sql::attachSqlCreator(new QueryAnd($itemA, $itemB));
     }
+
+    public static function OrOperation($itemA, $itemB) {
+        return Sql::attachSqlCreator(new QueryOr($itemA, $itemB));
+    }
+
+    public static function NotOperation($item) {
+        return Sql::attachSqlCreator(new QueryNot($item));
+    }
+
+    public static function Group($item) {
+        return Sql::attachSqlCreator(new QueryGroup($item));
+    }
+
+    // public static function ConditionSequence($items, $converter = null) {
+    //     if ($converter) {
+    //         $items = array_map($converter, $items);
+    //     }
+    //     return Sql::attachSqlCreator(new QueryConditionSequence($items));
+    // }
 
     protected static function attachSqlCreator($queryElement) {
         if (Sql::$sqlCreator === null) {
