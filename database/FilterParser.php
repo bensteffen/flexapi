@@ -1,15 +1,34 @@
 <?php
 
+include_once __DIR__ . "/../../bs-php-utils/utils.php";
 include_once __DIR__ . '/../requestutils/url.php';
 include_once __DIR__ . '/query.php';
 
 class FilterParser {
-    public static function parseFilterArray($filterArray) {
-        foreach (array_shift($filterArray) as $column => $value) {
-            $colRes = FilterParser::parseColumn($column);
-            $queryCol = new QueryColumn($colRes[2], $colRes[1], $colRes[0]);
-            $cond = new QueryCondition($queryCol, new QueryValue($value));
+
+    public $defaultEntity = null;
+    public $defaultDatabase = null;
+
+    public function parseFilter($filter) {
+        if (is_array($filter)) {
+            return FilterParser::parseFilterArray($filter);
         }
+        if (is_string($filter)) {
+            return FilterParser::parseQueryString($filter);
+        }
+        return $filter;
+        // throw(new Exception('Cannot convert filter to query.', 500));
+    }
+
+    public function parseFilterArray($filterArray) {
+        if (count($filterArray) === 0) {
+            return new QueryVoid();
+        }
+        list($column, $value) = assocShift($filterArray);
+        $colRes = FilterParser::parseColumn($column, $this->defaultEntity, $this->defaultDatabase);
+        $queryCol = new QueryColumn($colRes[2], $colRes[1], $colRes[0]);
+        $cond = new QueryCondition($queryCol, new QueryValue($value));
+
         if (count($filterArray) > 0) {
             return new QueryAnd($cond, FilterParser::parseFilterArray($filterArray));
         } else {
@@ -17,14 +36,9 @@ class FilterParser {
         }
     }
 
-    public static function parseQueryString($str) {
-        $groupRes = FilterParser::parseGroupExp($str);
-        if ($groupRes) {
-            return new QueryGroup(FilterParser::parseQueryString($groupRes));
-        }
-        $notRes = FilterParser::parseNotExp($str);
-        if ($notRes) {
-            return new QueryNot(FilterParser::parseQueryString($notRes));
+    public function parseQueryString($str) {
+        if (strlen($str) === 0) {
+            return new QueryVoid();
         }
         $andOrRes = FilterParser::parseAndOrExp($str);
         if ($andOrRes) {
@@ -35,6 +49,14 @@ class FilterParser {
             } else {
                 return new QueryOr($exp1, $exp2);
             }
+        }
+        $groupRes = FilterParser::parseGroupExp($str);
+        if ($groupRes) {
+            return new QueryGroup(FilterParser::parseQueryString($groupRes));
+        }
+        $notRes = FilterParser::parseNotExp($str);
+        if ($notRes) {
+            return new QueryNot(FilterParser::parseQueryString($notRes));
         }
         $condRes = FilterParser::parseCondExp($str);
         if ($condRes) {
@@ -53,10 +75,10 @@ class FilterParser {
             return new QueryCondition($exp1, $exp2, $op);
         }
         $valueRes = FilterParser::parseValue($str);
-        if ($valueRes) {
+        if ($valueRes !== null) {
             return new QueryValue($valueRes);
         }
-        $colRes = FilterParser::parseColumn($str);
+        $colRes = FilterParser::parseColumn($str, $this->defaultEntity, $this->defaultDatabase);
         if ($colRes) {
             return new QueryColumn($colRes[2], $colRes[1], $colRes[0]);
         }
@@ -81,38 +103,29 @@ class FilterParser {
     }
 
     protected static function parseAndOrExp($str) {
-        $checks = [];
-        foreach(['and','or'] as $operator) {
-            foreach(['', '!'] as $not) {
-                $checks = array_merge($checks, [
-                    [ 'operator' => $operator, "pattern" => "/\]$operator$not\[/"],
-                    [ 'operator' => $operator, "pattern" => "/\)$operator$not\(/"],
-                    [ 'operator' => $operator, "pattern" => "/\)$operator$not\[/"],
-                    [ 'operator' => $operator, "pattern" => "/\]$operator$not\(/"]
-                ]);
-            }
-        }
-        $l = strlen($str);
-        $first = [ "offset" => $l ];
-        foreach ($checks as $check) {
-            $hit = preg_match($check['pattern'], $str, $res, PREG_OFFSET_CAPTURE);
-            if ($hit && $res[0][1] < $first['offset']) {
-                $first = [
-                    'offset' => $res[0][1],
-                    'operator' => $check['operator']
+        $split = preg_split("/(and|or)/", $str, null, PREG_SPLIT_DELIM_CAPTURE);
+        $n = count($split);
+        for ($i = 1; $i < $n; $i += 2) {
+            $operator = $split[$i];
+            $left = implode(array_slice($split, 0, $i));
+            $right = implode(array_slice($split, $i+1));
+            $leftOk = FilterParser::isAndOrOperand($split[$i-1]) || FilterParser::isAndOrOperand($left);
+            $rightOk = FilterParser::isAndOrOperand($split[$i+1]) || FilterParser::isAndOrOperand($right);
+            if ($leftOk && $rightOk) {
+                return [
+                    'leftExpression' => $left,
+                    'rightExpression' => $right,
+                    'operator' => $operator
                 ];
             }
         }
-        if ($first['offset'] < $l) {
-            $offset = $first['offset'];
-            $gap = strlen($first['operator']);
-            return [
-                'leftExpression' => substr($str,0,$offset+1),
-                'rightExpression' => substr($str,$offset+1+$gap),
-                'operator' => $first['operator']
-            ];
-        }
         return null;
+    }
+
+    protected static function isAndOrOperand($str) {
+        return FilterParser::parseGroupExp($str)
+            || FilterParser::parseCondExp($str)
+            || FilterParser::parseNotExp($str);
     }
 
     protected static function parseCondExp($str) {
@@ -129,14 +142,14 @@ class FilterParser {
         return null;
     }
 
-    protected static function parseColumn($str) {
-        if (preg_match("/^([a-z][\w_]+\.)*[a-z][\w_]*$/", $str, $res)) {
+    protected static function parseColumn($str, $defaultEntity = null, $defaultDatabase = null) {
+        if (preg_match("/^([a-zA-Z][\w_]+\.)*[a-zA-Z][\w_]*$/", $str, $res)) {
             $elements = explode('.', $str);
             if (count($elements) < 2) {
-                $elements = array_merge([null, null], $elements);
+                $elements = array_merge([$defaultDatabase, $defaultEntity], $elements);
             }
             if (count($elements) < 3) {
-                $elements = array_merge([null], $elements);
+                $elements = array_merge([$defaultDatabase], $elements);
             }
             return $elements;
         }
