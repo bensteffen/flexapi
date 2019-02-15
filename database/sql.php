@@ -8,9 +8,13 @@ class SqlCreator implements QueryCreator {
     public $useTics = true;
 
     public function makeValue($queryValue) {
-        $str = jsenc($queryValue->value);
-        if (is_array($queryValue->value)) {
-            $str = jsenc($str);
+        if ($queryValue->plain) {
+            $str = $queryValue->value;
+        } else {
+            $str = jsenc($queryValue->value);
+            if (is_array($queryValue->value)) {
+                $str = jsenc($str);
+            }
         }
         return $str;  
     }
@@ -34,6 +38,9 @@ class SqlCreator implements QueryCreator {
         $op = strtolower($cond->operator);
         if ($op === 'not') {
             return sprintf("NOT %s = %s", $cond->itemA->toQuery(), $cond->itemB->toQuery());
+        } elseif ($op === 'con') {
+            $cond->itemB->plain = true;
+            return sprintf('%s LIKE "%%%s%%"', $cond->itemA->toQuery(), $cond->itemB->toQuery());
         } else {
             $operatorMap = ['eq' => '=', 'gr' => '>', 'ls' => '<', 'ge' => '>=', 'le' => '<='];
             return sprintf("%s %s %s", $cond->itemA->toQuery(), $operatorMap[$op], $cond->itemB->toQuery());
@@ -64,6 +71,10 @@ class SqlCreator implements QueryCreator {
         return sprintf("(%s)", $group->item->toQuery());
     }
 
+    public function makeVoid($void) {
+        return sprintf("1");
+    }
+
     // public function makeConditionSequence($seq) {
     //     $operatorMap = ['and' => ' AND ', 'or' => ' OR '];
     //     $queries = array_map(function($item) { return $item->toQuery(); }, $seq->items);
@@ -82,52 +93,52 @@ class Sql {
     protected static $sqlCreator = null;
 
     public static function Value($value) {
-        return Sql::attachSqlCreator(new QueryValue($value));
+        return Sql::attachCreator(new QueryValue($value));
     }
 
     public static function Column($name = "*", $table = null, $database = null) {
-        return Sql::attachSqlCreator(new QueryColumn($name, $table, $database));
+        return Sql::attachCreator(new QueryColumn($name, $table, $database));
     }
 
     public static function Assignment($column, $value) {
-        return Sql::attachSqlCreator(new QueryAssignment($column, $value));
+        return Sql::attachCreator(new QueryAssignment($column, $value));
     }
 
     public static function Sequence($items, $converter = null) {
         if ($converter) {
             $items = array_map($converter, $items);
         }
-        return Sql::attachSqlCreator(new QuerySequence($items));
+        return Sql::attachCreator(new QuerySequence($items));
     }
 
     public static function Condition($itemA, $operator, $itemB) {
-        return Sql::attachSqlCreator(new QueryCondition($itemA, $operator, $itemB));
+        return Sql::attachCreator(new QueryCondition($itemA, $operator, $itemB));
     }
 
     public static function AndOperation($itemA, $itemB) {
-        return Sql::attachSqlCreator(new QueryAnd($itemA, $itemB));
+        return Sql::attachCreator(new QueryAnd($itemA, $itemB));
     }
 
     public static function OrOperation($itemA, $itemB) {
-        return Sql::attachSqlCreator(new QueryOr($itemA, $itemB));
+        return Sql::attachCreator(new QueryOr($itemA, $itemB));
     }
 
     public static function NotOperation($item) {
-        return Sql::attachSqlCreator(new QueryNot($item));
+        return Sql::attachCreator(new QueryNot($item));
     }
 
     public static function Group($item) {
-        return Sql::attachSqlCreator(new QueryGroup($item));
+        return Sql::attachCreator(new QueryGroup($item));
     }
 
     // public static function ConditionSequence($items, $converter = null) {
     //     if ($converter) {
     //         $items = array_map($converter, $items);
     //     }
-    //     return Sql::attachSqlCreator(new QueryConditionSequence($items));
+    //     return Sql::attachCreator(new QueryConditionSequence($items));
     // }
 
-    protected static function attachSqlCreator($queryElement) {
+    public static function attachCreator($queryElement) {
         if (Sql::$sqlCreator === null) {
             Sql::$sqlCreator = new SqlCreator();
         }

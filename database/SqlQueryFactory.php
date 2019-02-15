@@ -10,7 +10,8 @@ class SqlQueryFactory {
         if (count($primaryKeys) > 0) {
             $pkQuery = sprintf(', PRIMARY KEY (%s)', Sql::Sequence($primaryKeys, function($k) { return Sql::Column($k); })->toQuery());
         }
-        $sqlFormat = "CREATE TABLE IF NOT EXISTS `%s` (%s%s) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;";
+        // $sqlFormat = "CREATE TABLE IF NOT EXISTS `%s` (%s%s) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;";
+        $sqlFormat = "CREATE TABLE IF NOT EXISTS `%s` (%s%s) ENGINE=InnoDB  DEFAULT CHARSET=utf8;";
         return sprintf(
             $sqlFormat, 
             $entity->getName(),
@@ -26,7 +27,7 @@ class SqlQueryFactory {
         return sprintf("SELECT %s FROM `%s` WHERE %s",
             Sql::Sequence($fieldSelection, function($f) { return Sql::Column($f); })->toQuery(),
             $entity->getName(),
-            SqlQueryFactory::filter2conditionString($filter)
+            Sql::attachCreator($filter)->toQuery()
         );
     }
 
@@ -53,7 +54,7 @@ class SqlQueryFactory {
     public static function makeDeleteQuery($entity, $filter) {
         return sprintf("DELETE FROM `%s` WHERE %s",
             $entity->getName(),
-            SqlQueryFactory::filter2conditionString($filter)
+            Sql::attachCreator($filter)->toQuery()
         );
     }
 
@@ -66,15 +67,13 @@ class SqlQueryFactory {
             array_map(function($col) use($joinedTable) { return Sql::Column($col, $joinedTable); }, $selection[1])
         ));
 
-        $joinConditions->setCreator(new SqlCreator());
-
         return sprintf("SELECT %s FROM `%s` %s JOIN `%s` ON %s WHERE %s",
             $selectionSequence->toQuery(),
             $baseEntity->getName(),
             $type,
             $joinedEntity->getName(),
-            $joinConditions->toQuery(),
-            SqlQueryFactory::filter2conditionString($filter)
+            Sql::attachCreator($joinConditions)->toQuery(),
+            Sql::attachCreator($filter)->toQuery()
         );
     }
 
@@ -102,18 +101,6 @@ class SqlQueryFactory {
             array_push($createStrings, $createString);
         }
         return implode(", ",$createStrings);
-    }
-
-    protected static function filter2conditionString($filters) {
-        if (count($filters) === 0) {
-            return "1";
-        }
-        return Sql::ConditionSequence($filters, function($f) {
-            return [
-                'concatOperator' => $f['concatOperator'],
-                'condition' => Sql::Condition(Sql::Column($f['field'], $f['entityName']), $f['operator'], Sql::Value($f['value']))
-            ];
-        })->toQuery();
     }
 }
 

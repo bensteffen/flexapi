@@ -86,23 +86,19 @@ class ACLGuard extends Guard {
         }
 
         if (count($pKeys) !== 1) {
-            throw("A permission can only be attached to entities with exactly 1 primary key.");
+            throw(new Exception("A permission can only be attached to entities with exactly 1 primary key.", 400));
         }
 
-        // $userCondition = new QueryCondition(new QueryColumn('user','permission'), 'eq', new QueryValue($this->username));
-        // $nameCondition = new QueryCondition(new QueryColumn('entityName','permission'), 'eq', new QueryValue($entityName));
-        // $idCondition = new QueryCondition(new QueryColumn('entityId','permission'), 'eq', new QueryColumn($pKeys[0],$entityName));
-        // $joinCondition = new QueryConditionSequence('and', [$userCondition, $nameCondition, $idCondition]);
+        $filterParser = new FilterParser();
+        $joinCondition = new QueryAnd($filterParser->parseFilterArray([
+            'permission.user' => $this->username,
+            'permission.entityName' => $entityName
+        ]), new QueryCondition(new QueryColumn('entityId','permission'), new QueryColumn($pKeys[0],$entityName)));
 
-        $joinCondition = new QueryAnd(FilterParser::parseFilterArray([
-            ['permission.user' => $this->username],
-            ['permission.entityName' => $entityName]
-        ]), new QueryColumn($pKeys[0],$entityName));
-
-        $filter = array_map(function($f) use($entityName) {
-            $f['entityName'] = $entityName;
-            return $f;
-        } , $filter);
+        $filter = new QueryAnd(
+            $filter,
+            new QueryCondition(new QueryColumn('entityName', 'permission'), new QueryValue($entityName))
+        );
 
         return $connection->joinTables("INNER",
             $this->protectDataModel->getEntity('permission'),

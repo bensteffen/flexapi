@@ -7,19 +7,16 @@ class Permission extends DataEntity {
     public function __construct() {
         parent::__construct('permission');
         $this->addField(
-            ['name' => 'id', 'type' => 'int', 'notNoll' => true, 'length' => 11, 'primary' => true, 'autoIncrement' => true]
-        );
-        $this->addField(
-            ['name' => 'user', 'type' => 'varchar', 'notNoll' => true, 'length' => 32]
+            ['name' => 'user', 'type' => 'varchar', 'notNoll' => true, 'length' => 32, 'primary' => true]
         );
         $this->addField(
             ['name' => 'accessLevel', 'type' => 'int', 'notNoll' => true, 'length' => 4]
         );
         $this->addField(
-            ['name' => 'entityName', 'type' => 'varchar', 'notNoll' => true, 'length' => 32]
+            ['name' => 'entityName', 'type' => 'varchar', 'notNoll' => true, 'length' => 32, 'primary' => true]
         );
         $this->addField(
-            ['name' => 'entityId', 'type' => 'varchar', 'notNoll' => true, 'length' => 16]
+            ['name' => 'entityId', 'type' => 'varchar', 'notNoll' => true, 'length' => 16, 'primary' => true]
         );
         // $this->addField(
         //     ['name' => 'primaryKeyData', 'type' => 'object', 'notNoll' => true]

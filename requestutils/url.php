@@ -23,6 +23,11 @@ function parseArrayString($str) {
             }
         }
         array_push($array, $buffer);
+        foreach($array as $x) {
+            if (!preg_match("/'.*'/", $x) && preg_match("/[^\w]/", $x)) {
+                return null;
+            }
+        }
         return $array;
     }
     return null;
@@ -54,9 +59,9 @@ function parseUrlParameters($queries) {
     }
     $entityName = $queries['entity'];
 
-    $filter = [];
+    $filter = '';
     if (array_key_exists('filter', $queries)) {
-        $filter = getFilterParameter($queries['filter']);
+        $filter = $queries['filter'];
     }
 
     $select = [];
@@ -91,35 +96,6 @@ function parseUrlParameters($queries) {
 
 //     preg_match_all("/(and|or)?\([\w\s\-_]+,[\w\s\-_]+,?[\w\s\-_]*\)/", $query, $selectQuery);  
 // }
-
-function getFilterParameter($query) {
-    $filters = [];
-
-    preg_match_all("/(and|or)?\([\w\s\-_]+,[\w\s\-_]+,?[\w\s\-_]*\)/", $query, $filterQuery);
-    $filterQuery = $filterQuery[0];
-    foreach ($filterQuery as $q) {
-        $concatOperator = "AND";
-        preg_match("/^(and|or)?/", $q, $concatMatch);
-        if (count($concatMatch) > 0  && $concatMatch[0] !== "") {
-            if (strtolower($concatMatch[0]) === "or") {
-                $concatOperator = "OR";
-            }
-            $q = preg_replace("/$concatMatch[0]/", "", $q);
-        }
-        $q = explode(",", preg_replace("/\(|\)/", "", $q));
-        $field = trim($q[0]);
-        if (count($q) === 2) {
-            $operator = "eq";
-            $value = $q[1];
-        } elseif (count($q) === 3) {
-            $operator = trim($q[1]);
-            $value = $q[2];
-        }
-        $filters[$field] = ["concatOperator" => $concatOperator, "operator" => $operator, "value" => $value];
-    }
-
-    return $filters;
-}
 
 function getReferenceParameters($query) {
     $refParameters = [];

@@ -7,6 +7,7 @@ abstract class QueryElement {
 
     public function setCreator($creator) {
         $this->creator = $creator;
+        return $this;
     }
 
     public abstract function toQuery();
@@ -23,10 +24,12 @@ interface QueryCreator {
     function makeOr($orElement);
     function makeNot($notElement);
     function makeGroup($groupElement);
+    function makeVoid($voidElement);
 }
 
 class QueryValue extends QueryElement {
     public $value;
+    public $plain = false;
 
     public function __construct($value) {
         $this->value = $value;
@@ -126,6 +129,12 @@ class QueryGroup extends QueryElement {
     public function toQuery() {
         $this->item->setCreator($this->creator);
         return $this->creator->makeGroup($this);
+    }
+}
+
+class QueryVoid extends QueryElement {
+    public function toQuery() {
+        return $this->creator->makeVoid($this);
     }
 }
 

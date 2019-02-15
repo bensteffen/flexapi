@@ -14,6 +14,7 @@ class DataModel {
     protected $references = [];
     protected $readOptions;
     protected $observationOptions;
+    protected $filterParser;
 
     public function __construct() {
         $this->readOptions = new Options([
@@ -27,6 +28,7 @@ class DataModel {
         ]);
         $this->references = new DataReferenceSet();
         $this->setGuard(new WorstGuardAtAll());
+        $this->filterParser =  new FilterParser();
     }
 
     public function setConnection($connection) {
@@ -82,29 +84,57 @@ class DataModel {
             throw(new Exception("User is not allowed to insert into $entityName.", 403));
         }
 
-        $data = $this->insertRegularReferences($entityName, $data);
+        $data = (array) $data;
 
-        $this->throwExceptionOnBadReference($entityName, $data);
-        $id = $this->connection->insertIntoDatabase($this->getEntity($entityName), $data);
-        $this->notifyObservers([
-            'subjectName' => $entityName,
-            'data'        => $data,
-            'user'        => $this->guard->getUsername(),
-            'insertId'    => $id,
-            'context'     => 'onInsert',
-            'metaData'    => $metaData
-        ]);
+        if (isAssoc($data)) {
+            $entity = $this->getEntity($entityName);
 
-        $this->insertInverseReferences($entityName, $id, $data);
+            $data = $this->insertRegularReferences($entityName, $data);
+            $this->throwExceptionOnBadReference($entityName, $data);
 
-        return $id;
+            $id = $this->connection->insertIntoDatabase(
+                $this->getEntity($entityName),
+                extractArray($entity->fieldNames(),$data)
+            );
+            if (!$id) {
+                $unqiueKey = $entity->uniqueKey();
+                if ($unqiueKey) {
+                    $id = $data[$unqiueKey];
+                } else {
+                    $id = extractArray($entity->primaryKeys(), $data);
+                }
+            }
+
+            $this->notifyObservers([
+                'subjectName' => $entityName,
+                'data'        => $data,
+                'user'        => $this->guard->getUsername(),
+                'insertId'    => $id,
+                'context'     => 'onInsert',
+                'metaData'    => $metaData
+            ]);
+    
+            $this->insertInverseReferences($entityName, $id, $data);
+    
+            return $id;
+        } else {
+            $ids = [];
+            foreach($data as $d) {
+                $id = $this->insert($entityName, $d, $metaData);
+                array_push($ids, $id);
+            }
+            return $ids;
+        }
     }
 
     private function insertRegularReferences($entityName, $data) {
         foreach ($this->references->getRegular($entityName) as $ref) {
             $field = $ref['referenceField'];
-            if (array_key_exists($field, $data) && is_array($data[$field])) {
-                $data[$field] = $this->insert($ref['referencedEntity'], $data[$field]);
+            if (array_key_exists($field, $data)) {
+                $refData = (array) $data[$field];
+                if (isAssoc($refData)) {
+                    $data[$field] = $this->upsert($ref['referencedEntity'], $refData, $refData);
+                }
             }
         }
         return $data;
@@ -113,10 +143,21 @@ class DataModel {
     private function insertInverseReferences($entityName, $entityId, $data) {
         foreach ($this->references->getInverse($entityName) as $ref) {
             $field = $ref['containerField'];
-            if (array_key_exists($field, $data) && is_array($data[$field])) {
-                foreach ($data[$field] as $refData) {
-                    $refData[$ref['referenceField']] = $entityId;
-                    $this->insert($ref['referencedEntity'], $refData);
+            if (array_key_exists($field, $data)) {
+                $refDataArray = (array) $data[$field];
+                foreach ($refDataArray as $refData) {
+                    $refData = (array) $refData;
+                    if (isAssoc($refData)) {
+                        $refData[$ref['referenceField']] = $entityId;
+                        $this->insert($ref['referencedEntity'], $refData);
+                    } elseif (count($refData) === 1) {
+                        $refId = $refData[0];
+                        $refIdName = $this->getEntity($ref['referencedEntity'])->uniqueKey();
+                        $this->update($ref['referencedEntity'], [
+                            $refIdName => $refId,
+                            $ref['referenceField'] => $entityId
+                        ]);
+                    }
                 }
             }
         }
@@ -125,7 +166,7 @@ class DataModel {
 
     public function read($entityName, $options = []) {    
         $this->readOptions->setValues($options);
-        $filter    = $this->reshapeFilterConfig($this->readOptions->valueOf('filter'));
+        $filter    = $this->filter2Query($this->readOptions->valueOf('filter'), $entityName);
         $selection = $this->reshapeSelection($entityName, $this->readOptions->valueOf('selection'));
         $referenceConfig = $this->reshapeReferenceConfig($this->readOptions->valueOf('references'));
         $flatten = $this->readOptions->valueOf('flatten');
@@ -205,26 +246,26 @@ class DataModel {
                 $existing[$field] = $value;
             }
             $this->update($entityName, $existing);
-            return $existing[$entity->uniqueKey()];
+            return extractArray($entity->primaryKeys(), $existing, true);
         } else {
             return $this->insert($entityName, $data);
         }
     }
 
     public function delete($entityName, $filter = []) {
-        $filter = $this->reshapeFilterConfig($filter);
+        $filter = $this->filter2Query($filter, $entityName);
 
         if (!$this->guard->userCanDelete()) {
             throw(new Exception("User is not allowed to delete '$entityName'", 403));
         }
-
-        $this->connection->deleteFromDatabase($this->getEntity($entityName), $filter);
 
         $this->notifyObservers([
             'subjectName' => $entityName,
             'filter' => $filter,
             'context' => 'onDelete'
         ]);
+
+        $this->connection->deleteFromDatabase($this->getEntity($entityName), $filter);
     }
 
     public function resourceExists($entityName, $filter) {
@@ -405,23 +446,15 @@ class DataModel {
         }
     }
 
-    protected function reshapeFilterConfig($config) {
-        $reshaped = [];
-        foreach ($config as $field => $filter) {
-            if (!is_array($filter)) {
-                $filter = [
-                    'concatOperator' => 'AND',
-                    'operator' => 'eq',
-                    'value' => $filter,
-                    'entityName' => null
-                ];
-            }
-            if (!array_key_exists('entityName', $filter)) {
-                $filter['entityName'] = null;
-            }
-            array_push($reshaped, array_merge(['field' => $field], $filter));
+    protected function filter2Query($filter, $entityName) {
+        $this->filterParser->defaultEntity = $entityName;
+        if (is_array($filter)) {
+            return $this->filterParser->parseFilterArray($filter);
         }
-        return $reshaped;
+        if (is_string($filter)) {
+            return $this->filterParser->parseQueryString($filter);
+        }
+        throw(new Exception('Cannot convert filter to query.', 500));
     }
 
     protected function reshapeSelection($entityName, $selection) {
@@ -466,7 +499,7 @@ class DataModel {
             $_SERVER['SERVER_NAME'],
             $_SERVER['SERVER_PORT'],
             $entityName,
-            "($keyName,$keyValue)"
+            "[$keyName,$keyValue]"
         );
     }
 }

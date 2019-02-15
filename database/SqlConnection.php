@@ -96,6 +96,16 @@ class SqlConnection implements IfDatabseConnection {
                 $data[$i][$key] = (array) json_decode($d[$key]);
             }
         }
+        $objectKeys = extractByKey('name', array_filter($entity->getFieldSet(), function($f) {
+            return $f['type'] === 'bool' || $f['type'] === 'boolean';
+        }));
+        foreach($data as $i => $d) {
+            foreach(array_intersect($objectKeys, array_keys($d)) as $key) {
+                $v = false;
+                if ($data[$i][$key]) { $v = true; }
+                $data[$i][$key] = $v;
+            }
+        }
         return $data;
     }
 
@@ -123,7 +133,19 @@ class SqlConnection implements IfDatabseConnection {
         if ($this->dbConnection === null) {
             throw(new Exception('SqlConnection.checkConnection(): No connection established', 500));
         }
-    } 
+    }
+
+    protected function transformByType($entity, $data, $typeName, $transformation) {
+        $objectKeys = extractByKey('name', array_filter($entity->getFieldSet(), function($f) {
+            return $f['type'] === $typeName;
+        }));
+        foreach($data as $i => $d) {
+            foreach(array_intersect($objectKeys, array_keys($d)) as $key) {
+                $data[$i][$key] = $transformation($data[$i][$key]);
+            }
+        }
+        return $data;
+    }
 }
 
 ?>
