@@ -23,11 +23,11 @@ function parseArrayString($str) {
             }
         }
         array_push($array, $buffer);
-        foreach($array as $x) {
-            if (!preg_match("/'.*'/", $x) && preg_match("/[^\w]/", $x)) {
-                return null;
-            }
-        }
+        // foreach($array as $x) {
+        //     if (!preg_match("/'.*'/", $x) && preg_match("/[]/", $x)) {
+        //         return null;
+        //     }
+        // }
         return $array;
     }
     return null;

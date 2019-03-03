@@ -23,6 +23,14 @@ class SqlCreator implements QueryCreator {
         $n = $this->addTics($column->name);
         $t = $this->addTics($column->table);
         $d = $this->addTics($column->database);
+        $refs = $column->references;
+        if (count($refs) > 0) {
+            foreach($refs as $refId => $ref) {
+                $fieldChain = array_map(function($r) { return $r['referenceField']; }, $ref);
+                $t = implode('_', array_merge([$refId], $fieldChain));
+            }
+            $t = $this->addTics($t);
+        }
 
         $str = $n;
         if ($t) {
@@ -112,7 +120,7 @@ class Sql {
     }
 
     public static function Condition($itemA, $operator, $itemB) {
-        return Sql::attachCreator(new QueryCondition($itemA, $operator, $itemB));
+        return Sql::attachCreator(new QueryCondition($itemA, $itemB, $operator));
     }
 
     public static function AndOperation($itemA, $itemB) {

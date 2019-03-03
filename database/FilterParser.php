@@ -8,19 +8,26 @@ class FilterParser {
 
     public $defaultEntity = null;
     public $defaultDatabase = null;
+    public $dataModel = null;
+    protected $referencedEntities = [];
+    protected $tree;
 
     public function parseFilter($filter) {
+        $this->referencedEntities = [];
         if (is_array($filter)) {
-            return FilterParser::parseFilterArray($filter);
+            $tree =  $this->parseFilterArray($filter);
         }
         if (is_string($filter)) {
-            return FilterParser::parseQueryString($filter);
+            $tree = $this->parseQueryString($filter);
         }
-        return $filter;
+        return [
+            'tree' => $tree,
+            'references' => $this->referencedEntities
+        ];
         // throw(new Exception('Cannot convert filter to query.', 500));
     }
 
-    public function parseFilterArray($filterArray) {
+    protected function parseFilterArray($filterArray) {
         if (count($filterArray) === 0) {
             return new QueryVoid();
         }
@@ -36,7 +43,7 @@ class FilterParser {
         }
     }
 
-    public function parseQueryString($str) {
+    protected function parseQueryString($str) {
         if (strlen($str) === 0) {
             return new QueryVoid();
         }
@@ -78,25 +85,31 @@ class FilterParser {
         if ($valueRes !== null) {
             return new QueryValue($valueRes);
         }
-        $colRes = FilterParser::parseColumn($str, $this->defaultEntity, $this->defaultDatabase);
+        $colRes = FilterParser::parseColumn($str, $this->dataModel, $this->defaultEntity, $this->defaultDatabase);
         if ($colRes) {
+            if (count($colRes) === 4) {
+                $refId = 'ref'.(count($this->referencedEntities)+1);
+                $ref = (array) $colRes[3];
+                $this->referencedEntities[$refId] = $ref;
+                return new QueryColumn($colRes[2], $colRes[1], $colRes[0], [$refId => $ref]);
+            }
             return new QueryColumn($colRes[2], $colRes[1], $colRes[0]);
         }
         throw(new Exception("Cannot parse '$str'"));
     }
 
     protected static function parseNotExp($str) {
-        if (preg_match("/^!\(.*\)$/", $str, $res)) {
+        if (preg_match("/^!\(.*\)$/", $str)) {
             return substr($str, 1, strlen($str)-1);
         }
-        if (preg_match("/^!\[.*\]$/", $str, $res)) {
+        if (preg_match("/^!\[.*\]$/", $str)) {
             return substr($str, 1, strlen($str)-1);
         }
         return null;
     }
 
     protected static function parseGroupExp($str) {
-        if (preg_match("/^\(.*\)$/", $str, $res)) {
+        if (preg_match("/^\(.*\)$/", $str)) {
             return substr($str, 1, strlen($str)-2);
         }
         return null;
@@ -133,25 +146,39 @@ class FilterParser {
     }
 
     protected static function parseValue($str) {
-        if (preg_match("/^'.*'$/", $str, $res)) {
+        if (preg_match("/^'.*'$/", $str)) {
             return substr($str, 1, strlen($str)-2);
         }
-        if (preg_match("/^[-+]?[0-9]*[.]?[0-9]+$/", $str, $res)) {
+        if (preg_match("/^[-+]?[0-9]*[.]?[0-9]+$/", $str)) {
             return $str;
         }
         return null;
     }
 
-    protected static function parseColumn($str, $defaultEntity = null, $defaultDatabase = null) {
-        if (preg_match("/^([a-zA-Z][\w_]+\.)*[a-zA-Z][\w_]*$/", $str, $res)) {
-            $elements = explode('.', $str);
-            if (count($elements) < 2) {
-                $elements = array_merge([$defaultDatabase, $defaultEntity], $elements);
+    protected static function parseColumn($str, $dataModel, $defaultEntity = null, $defaultDatabase = null) {
+        if (preg_match("/^([a-zA-Z][\w_]+\.)*[a-zA-Z][\w_]*$/", $str)) {
+            $referencedEntities = [];
+            $dotSplit = explode('.', $str);
+            $n = count($dotSplit);
+            if ($n === 1 || !$dataModel) {
+                return [$defaultDatabase, $defaultEntity, $dotSplit[0]];
             }
-            if (count($elements) < 3) {
-                $elements = array_merge([$defaultDatabase], $elements);
+            $currentEntity = $defaultEntity;
+            foreach (array_slice($dotSplit, 0, $n-1) as $refName) {
+                $referencedEntityName = $dataModel->getReferenceSet()->fieldToEntityName($currentEntity, $refName);
+                if ($referencedEntityName) {
+                    array_push($referencedEntities, [
+                        'referencingEntity' => $currentEntity,
+                        'referencedEntity' => $referencedEntityName,
+                        'referenceField' => $refName,
+                        'referenceKeyName' => $dataModel->getEntity($referencedEntityName)->uniqueKey()
+                    ]);
+                    $currentEntity = $referencedEntityName;
+                } else {
+                    throw(new Exception(sprintf('There is no reference %s.%s', $currentEntity, $refName), 400));
+                }
             }
-            return $elements;
+            return [$defaultDatabase, $dotSplit[$n-2], $dotSplit[$n-1], $referencedEntities];
         }
     }
 }

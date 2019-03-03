@@ -79,34 +79,40 @@ class ACLGuard extends Guard {
 
     public function deliverPermitted($connection, $entity, $filter, $selection) {
         $entityName = $entity->getName();
-        $pKeys = $entity->primaryKeys();
+        $keyName = $entity->uniqueKey();
 
         if (count($selection) === 0) {
             $selection = $entity->fieldNames();
         }
 
-        if (count($pKeys) !== 1) {
+        if (!$keyName) {
             throw(new Exception("A permission can only be attached to entities with exactly 1 primary key.", 400));
         }
 
-        $filterParser = new FilterParser();
-        $joinCondition = new QueryAnd($filterParser->parseFilterArray([
-            'permission.user' => $this->username,
-            'permission.entityName' => $entityName
-        ]), new QueryCondition(new QueryColumn('entityId','permission'), new QueryColumn($pKeys[0],$entityName)));
+        $permissionRef = [[
+            'referencingEntity' => $entityName,
+            'referencedEntity' => 'permission',
+            'referenceField' => 'permission',
+            'referenceCondition' => null
+        ]];
 
-        $filter = new QueryAnd(
-            $filter,
-            new QueryCondition(new QueryColumn('entityName', 'permission'), new QueryValue($entityName))
+        $userEq = new QueryCondition(
+            new QueryColumn('user', 'permission', null, ['ACL' => $permissionRef ]),
+            new QueryValue($this->getUsername())
+        );
+        $entityEq = new QueryCondition(
+            new QueryColumn('entityName', 'permission', null, ['ACL' => $permissionRef ]),
+            new QueryValue($entityName)
+        );
+        $keyEq = new QueryCondition(
+            new QueryColumn('entityId', 'permission', null, ['ACL' => $permissionRef ]),
+            new QueryColumn($keyName)
         );
 
-        return $connection->joinTables("INNER",
-            $this->protectDataModel->getEntity('permission'),
-            $entity,
-            $joinCondition,
-            [ [], $selection ],
-            $filter
-        );
+        $permissionRef[0]['referenceCondition'] = new QueryAnd(new QueryAnd($userEq, $entityEq), $keyEq);
+        $filter['references']['ACL'] = $permissionRef;
+
+        return $connection->readFromDataBase($entity, $filter, $selection);
     }
 
     public function publish($rootEntityName, $filter, $accessLevel, $guestPassword) {

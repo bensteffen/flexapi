@@ -44,11 +44,13 @@ class QueryColumn extends QueryElement {
     public $name;
     public $table;
     public $database;
+    public $references;
 
-    public function __construct($name, $table = null, $database = null) {
+    public function __construct($name, $table = null, $database = null, $references = []) {
         $this->name = $name;
         $this->table = $table;
         $this->database = $database;
+        $this->references = $references;
     }
 
     public function toQuery() {

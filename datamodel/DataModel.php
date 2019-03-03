@@ -1,5 +1,6 @@
 <?php
 
+include_once __DIR__ . "/../FlexAPI.php";
 include_once __DIR__ . "./DataReferenceSet.php";
 include_once __DIR__ . "/../../bs-php-utils/Options.php";
 include_once __DIR__ . "/../accesscontrol/WorstGuardAtAll.php";
@@ -10,7 +11,6 @@ class DataModel {
     protected $guard = null;
     protected $entities = [];
     protected $observations = [];
-    protected $referenceSet;
     protected $references = [];
     protected $readOptions;
     protected $observationOptions;
@@ -29,6 +29,7 @@ class DataModel {
         $this->references = new DataReferenceSet();
         $this->setGuard(new WorstGuardAtAll());
         $this->filterParser =  new FilterParser();
+        $this->filterParser->dataModel = $this;
     }
 
     public function setConnection($connection) {
@@ -77,6 +78,10 @@ class DataModel {
         return array_map(function($entity) {
             return $entity->getName();
         }, $this->entities);
+    }
+
+    public function getReferenceSet() {
+        return $this->references;
     }
 
     public function insert($entityName, $data = [], $metaData = []) {
@@ -166,7 +171,7 @@ class DataModel {
 
     public function read($entityName, $options = []) {    
         $this->readOptions->setValues($options);
-        $filter    = $this->filter2Query($this->readOptions->valueOf('filter'), $entityName);
+        $filter    = $this->parseFilter($this->readOptions->valueOf('filter'), $entityName);
         $selection = $this->reshapeSelection($entityName, $this->readOptions->valueOf('selection'));
         $referenceConfig = $this->reshapeReferenceConfig($this->readOptions->valueOf('references'));
         $flatten = $this->readOptions->valueOf('flatten');
@@ -253,7 +258,7 @@ class DataModel {
     }
 
     public function delete($entityName, $filter = []) {
-        $filter = $this->filter2Query($filter, $entityName);
+        $filter = $this->parseFilter($filter, $entityName);
 
         if (!$this->guard->userCanDelete()) {
             throw(new Exception("User is not allowed to delete '$entityName'", 403));
@@ -446,14 +451,9 @@ class DataModel {
         }
     }
 
-    protected function filter2Query($filter, $entityName) {
+    public function parseFilter($filter, $entityName) {
         $this->filterParser->defaultEntity = $entityName;
-        if (is_array($filter)) {
-            return $this->filterParser->parseFilterArray($filter);
-        }
-        if (is_string($filter)) {
-            return $this->filterParser->parseQueryString($filter);
-        }
+        return $this->filterParser->parseFilter($filter);
         throw(new Exception('Cannot convert filter to query.', 500));
     }
 
@@ -495,9 +495,13 @@ class DataModel {
     }
 
     protected function makeResourceUrl($entityName, $keyName, $keyValue) {
-        return sprintf("http://%s:%s/tourline/api/v2/crud.php?entity=%s&filter=%s",
+        if (!is_numeric($keyValue)) {
+            $keyValue = sprintf("'%s'", $keyValue);
+        }
+        return sprintf("http://%s:%s%s/crud.php?entity=%s&filter=%s&flatten=singleResult",
             $_SERVER['SERVER_NAME'],
             $_SERVER['SERVER_PORT'],
+            FlexAPI::get('apiPath'),
             $entityName,
             "[$keyName,$keyValue]"
         );

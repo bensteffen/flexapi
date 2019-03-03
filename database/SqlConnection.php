@@ -37,7 +37,7 @@ class SqlConnection implements IfDatabseConnection {
         return $this->dbConnection->insert_id;
     }
 
-    public function readFromDatabase($entity, $filter, $fieldSelection) {
+    public function readFromDatabase($entity, $filter, $fieldSelection, $entityReferences = []) {
         $this->checkConnection();
         $selectQuery = SqlQueryFactory::makeSelectQuery($entity, $filter, $fieldSelection);
         // echo "<br>select query: $selectQuery<br>";

@@ -22,12 +22,15 @@ class SqlQueryFactory {
 
     public static function makeSelectQuery($entity, $filter = [], $fieldSelection = []) {
         if (count($fieldSelection) === 0) {
-            $fieldSelection = ['*'];
+            $fieldSelection = $entity->fieldNames();
         }
-        return sprintf("SELECT %s FROM `%s` WHERE %s",
-            Sql::Sequence($fieldSelection, function($f) { return Sql::Column($f); })->toQuery(),
+        return sprintf("SELECT %s FROM `%s` %s WHERE %s",
+            Sql::Sequence($fieldSelection, function($f) use($entity) {
+                return Sql::Column($f, $entity->getName());
+            })->toQuery(),
             $entity->getName(),
-            Sql::attachCreator($filter)->toQuery()
+            SqlQueryFactory::makeReferencedTablesJoinQuery(array_merge($filter['references'])),
+            Sql::attachCreator($filter['tree'])->toQuery()
         );
     }
 
@@ -101,6 +104,33 @@ class SqlQueryFactory {
             array_push($createStrings, $createString);
         }
         return implode(", ",$createStrings);
+    }
+
+    protected static function makeReferencedTablesJoinQuery($references) {
+        $joinQueries = [];
+        foreach ($references as $refNo => $refChain) {
+            $referencingEntity = $refChain[0]['referencingEntity'];
+            $fieldChain = [];
+            $fieldChain = [$refNo];
+            foreach($refChain as $ref) {
+                array_push($fieldChain, $ref['referenceField']);
+                $as = implode('_', $fieldChain);
+                if (array_key_exists('referenceCondition', $ref)) {
+
+                    $on = Sql::attachCreator($ref['referenceCondition']);
+                } else {
+                    $on = Sql::Condition(
+                        Sql::Column($ref['referenceField'], $referencingEntity),
+                        'eq', Sql::Column($ref['referenceKeyName'], $as)
+                    );
+                }
+
+                $query = sprintf("JOIN %s AS %s ON %s", $ref['referencedEntity'], $as, $on->toQuery());
+                array_push($joinQueries, $query);
+                $referencingEntity = $as;
+            }
+        }
+        return implode(' ', $joinQueries);
     }
 }
 

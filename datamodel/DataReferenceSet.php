@@ -15,9 +15,14 @@ class DataReferenceSet {
     }
 
     public function addReference($ref) {
-        if(!array_key_exists('direction', $ref)) {
-            $ref['direction'] = 'regular';
+        if (is_string($ref)) {
+            $ref = $this->parseRefString($ref);
+            if (!$ref) {
+                throw(new Exception("Could not parse reference string", 400));
+            }
         }
+
+        $ref = setFieldDefault($ref, 'direction', 'regular');
 
         $direction = $ref['direction'];
         if ($direction !== 'regular' && $direction !== 'inverse') {
@@ -60,6 +65,47 @@ class DataReferenceSet {
             ]);
         }
         return $refList;
+    }
+
+    public function fieldToEntityName($referencingEntityName, $refrenceFieldName) {
+        $refList = $this->getRegular($referencingEntityName);
+        $ref = array_filter($refList, function($r) use($refrenceFieldName) {
+            return $r['referenceField'] === $refrenceFieldName;
+        });
+        if (count($ref) === 1) {
+            $ref = array_pop($ref);
+            return $ref['referencedEntity'];
+        }
+        return null;
+    }
+
+    public function parseRefString($ref) {
+        $regRes = explode('->' ,$ref);
+        if (count($regRes) === 2) {
+            $itemA = trim($regRes[0]);
+            $itemB = trim($regRes[1]);
+            $dotSplit = explode('.', $itemA);
+            return [
+                'referencingEntity' => $dotSplit[0],
+                'referenceField' => $dotSplit[1],
+                'referencedEntity' => $itemB
+            ];
+        }
+        $invRes = explode('<-' ,$ref);
+        if (count($invRes) === 2) {
+            $itemA = trim($invRes[0]);
+            $itemB = trim($invRes[1]);
+            $dotSplitA = explode('.', $itemA);
+            $dotSplitB = explode('.', $itemB);
+            return [
+                'direction' => 'inverse',
+                'referencingEntity' => $dotSplitA[0],
+                'containerField' => $dotSplitA[1],
+                'referencedEntity' => $dotSplitB[0],
+                'referenceField' => $dotSplitB[1]
+            ];
+        }
+        return null;
     }
 
     private function insertReference($ref) {
