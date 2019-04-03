@@ -24,7 +24,8 @@ class DataModel {
                 'depth' => 1, // options: 'deep' (as deep as possible) or 0 (don't resolve) or 1 or 2 or ...
                 'format' => 'url'   // options: 'data', 'keys', 'url'
             ],
-            'flatten' => false
+            'flatten' => false,
+            'emptyResult' => null
         ]);
         $this->references = new DataReferenceSet();
         $this->setGuard(new WorstGuardAtAll());
@@ -175,6 +176,7 @@ class DataModel {
         $selection = $this->reshapeSelection($entityName, $this->readOptions->valueOf('selection'));
         $referenceConfig = $this->reshapeReferenceConfig($this->readOptions->valueOf('references'));
         $flatten = $this->readOptions->valueOf('flatten');
+        $emptyResult = $this->readOptions->valueOf('emptyResult');
         
         if (!$this->guard->userCanRead()) {
             throw(new Exception("User is not allowed to read from '$entityName' specified by " . jsenc($filter) . ".", 403));
@@ -213,9 +215,25 @@ class DataModel {
         }
 
         if (count($data) === 0) {
-            return null;
+            return $emptyResult;
         }
         return $data;
+    }
+
+    public function idOf($entityName, $filter) {
+        $keyName = $this->getEntity($entityName)->unqiueKey();
+        if (!$keyName) {
+            throw(new Exception("DataModel->idOf: only works for entities with unique key.", 500));
+        }
+        $result = $this->dataModel->read($entityName, [
+            'filter' => $filter,
+            'select' => [$keyName],
+            'flatten' => 'singleResult'
+        ]);
+        if (!$result || count($result) > 1) {
+            throw(new Exception("DataModel->idOf: filter delivered no or a not unique result", 500));
+        }
+        return $result['id'];
     }
 
     public function update($entityName, $data) {
