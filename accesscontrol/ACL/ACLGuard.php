@@ -106,7 +106,7 @@ class ACLGuard extends Guard {
         );
         $keyEq = new QueryCondition(
             new QueryColumn('entityId', 'permission', null, ['ACL' => $permissionRef ]),
-            new QueryColumn($keyName)
+            new QueryColumn($keyName, $entityName)
         );
 
         $permissionRef[0]['referenceCondition'] = new QueryAnd(new QueryAnd($userEq, $entityEq), $keyEq);
