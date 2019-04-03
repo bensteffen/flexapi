@@ -19,7 +19,6 @@ interface QueryCreator {
     function makeCondition($conditionElement);
     function makeAssignment($assignmentElement);
     function makeSequence($sequenceElement);
-    // function makeConditionSequence($conditionSequenceElement);
     function makeAnd($andElement);
     function makeOr($orElement);
     function makeNot($notElement);
@@ -139,26 +138,6 @@ class QueryVoid extends QueryElement {
         return $this->creator->makeVoid($this);
     }
 }
-
-// class QueryConditionSequence extends QueryElement {
-//     public $operator;
-//     public $items;
-
-//     public function __construct($operator, $items = []) {
-//         $this->items = $items;
-//     }
-
-//     public function addItem($item) {
-//         array_push($this->items, $item);
-//     }
-
-//     public function toQuery() {
-//         foreach ($this->items as $item) {
-//             $item->setCreator($this->creator);
-//         }
-//         return $this->creator->makeConditionSequence($this);
-//     }
-// }
 
 class QueryAssignment extends QueryElement {
     public $column;
