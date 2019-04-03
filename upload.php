@@ -12,27 +12,19 @@ try {
         'code' => 200
     ];
 
-    $fileFormat = $_GET['format'];
-    $fileName = $_GET['filename'];
+    $fileName = $_POST['fileName'];
+    $file = $_FILES['file'];
+
     $formatFolders = [
-        'gpx' => 'gps/',
-        'jpg' => 'img/'
+        'application/gpx+xml' => 'gps/',
+        'image/jpeg' => 'img/'
     ];
 
-    $resourcePath = $formatFolders[$fileFormat];
+    $resourcePath = $formatFolders[$file['type']];
 
     $rootFolder = FlexAPI::get('appRoot');
     $uploadFolder = FlexAPI::get('uploadFolder');
     
-    $file = file_get_contents("php://input");
-    $tempName = tempnam($rootFolder.$uploadFolder,'');
-    $fid = fopen($tempName, 'w');
-    if (!$fid) {
-        throw(new Exception("Couldn't create file", 500));
-    }
-    fwrite($fid, $file);
-    fclose($fid);
-
     $resourcePath = $uploadFolder.'/'.FlexAPI::guard()->getUsername().'/'.$resourcePath;
     $completePath = $rootFolder.$resourcePath;
     if (!is_dir($completePath)) {
@@ -40,13 +32,13 @@ try {
     }
     $saveName = time()."--".$fileName;
     $savePath = $completePath.$saveName;
-    rename($tempName, $savePath);
+    rename($file['tmp_name'], $savePath);
 
     $id = FlexAPI::dataModel()->insert('upload', [
         'name' => $fileName,
-        'format' => $fileFormat,
+        'mimeType' => $file['type'],
         'source' => $resourcePath.$saveName
-    ], assocIgnore($_GET, ['format', 'filename']));
+    ], assocIgnore($_POST, ['format', 'filename']));
 
     $response['id'] = $id;
     echo jsenc($response); 
