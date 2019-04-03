@@ -15,6 +15,9 @@ class FilterParser {
     public function parseFilter($filter) {
         $this->referencedEntities = [];
         if (is_array($filter)) {
+            if (array_key_exists('tree', $filter) && array_key_exists('references', $filter)) {
+                return $filter;
+            }
             $tree =  $this->parseFilterArray($filter);
         }
         if (is_string($filter)) {
