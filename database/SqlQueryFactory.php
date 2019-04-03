@@ -125,7 +125,7 @@ class SqlQueryFactory {
                     );
                 }
 
-                $query = sprintf("JOIN %s AS %s ON %s", $ref['referencedEntity'], $as, $on->toQuery());
+                $query = sprintf("JOIN `%s` AS `%s` ON %s", $ref['referencedEntity'], $as, $on->toQuery());
                 array_push($joinQueries, $query);
                 $referencingEntity = $as;
             }
