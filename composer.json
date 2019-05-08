@@ -6,7 +6,7 @@
             "type": "package",
             "package": {
                 "name": "bensteffen/bs-php-utils",
-                "version": "1.0",
+                "version": "1.1",
                 "source": {
                     "type": "git",
                     "url": "https://github.com/bensteffen/bs-php-utils",
