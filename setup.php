@@ -24,7 +24,7 @@ try {
     if (!array_key_exists('resetSecret', $request)) {
         throw(new Exception('Setup secret missing.'));
     }
-    if ($request['resetSecret'] !== FlexAPI::get('resetSecret')) {
+    if ($request['resetSecret'] !== FlexAPI::get('setupSecret')) {
         throw(new Exception('Setup secret invalid.'));
     }
 
