@@ -14,4 +14,3 @@ class User extends DataEntity {
     }
 }
 
-?>

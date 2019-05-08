@@ -28,15 +28,37 @@ try {
             "message" => "Login sucessfull",
             "token" => $token,
         ];
-
+    // TODO: add concern "verify (registration)"
     } elseif ($request["concern"] === "logout") {
         FlexAPI::guard()->logout(getJWT());
         $response = ["message" => "Logout sucessfull"];
 
     } elseif ($request["concern"] === "register") {
-        FlexAPI::guard()->registerUser($request['username'], $request['password'], $request['accessLevel']);
-        $response = ["message" => "User was created."];
+        FlexAPI::sendEvent([
+            'eventId' => 'before-user-registration',
+            'username' => $request['username']
+        ]);
 
+        FlexAPI::guard()->registerUser($request['username'], $request['password']);
+
+        FlexAPI::sendEvent([
+            'eventId' => 'after-user-registration',
+            'username' => $request['username']
+        ]);
+        $response = ["message" => "User was created."];
+    } elseif ($request["concern"] === "unregister") {
+        FlexAPI::sendEvent([
+            'eventId' => 'before-user-unregistration',
+            'username' => $request['username']
+        ]);
+
+        FlexAPI::guard()->unregisterUser($request['username'], $request['password']);
+
+        FlexAPI::sendEvent([
+            'eventId' => 'after-user-unregistration',
+            'username' => $request['username']
+        ]);
+        $response = ["message" => "User was deleted."];
     } elseif ($request["concern"] === "publish") {
         
     } else {
@@ -57,4 +79,3 @@ http_response_code(200);
 $response['code'] = 200;
 echo jsenc($response);
 
-?>

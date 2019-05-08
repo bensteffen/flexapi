@@ -3,10 +3,9 @@
 function getJWT() {
     $http_header = getallheaders();
     $jwt = null;
-    if (array_key_exists('Authorization', $http_header)) {
-        list($jwt) = sscanf($http_header['Authorization'], 'Bearer %s');
+    if (array_key_exists('Access-Control-Allow-Credentials', $http_header)) {
+        $jwt = $http_header['Access-Control-Allow-Credentials'];
     }
     return $jwt;
 }
 
-?>

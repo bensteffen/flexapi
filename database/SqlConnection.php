@@ -37,9 +37,9 @@ class SqlConnection implements IfDatabseConnection {
         return $this->dbConnection->insert_id;
     }
 
-    public function readFromDatabase($entity, $filter, $fieldSelection, $entityReferences = []) {
+    public function readFromDatabase($entity, $filter, $fieldSelection, $entityReferences = [], $distinct = true) {
         $this->checkConnection();
-        $selectQuery = SqlQueryFactory::makeSelectQuery($entity, $filter, $fieldSelection);
+        $selectQuery = SqlQueryFactory::makeSelectQuery($entity, $filter, $fieldSelection, $distinct);
         // echo "<br>select query: $selectQuery<br>";
         return $this->finishData($entity, $this->fetchData($this->executeQuery($selectQuery)));
     }
@@ -148,4 +148,3 @@ class SqlConnection implements IfDatabseConnection {
     }
 }
 
-?>

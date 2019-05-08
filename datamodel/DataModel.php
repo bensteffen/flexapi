@@ -1,7 +1,7 @@
 <?php
 
 include_once __DIR__ . "/../FlexAPI.php";
-include_once __DIR__ . "./DataReferenceSet.php";
+include_once __DIR__ . "/DataReferenceSet.php";
 include_once __DIR__ . "/../../bs-php-utils/Options.php";
 include_once __DIR__ . "/../accesscontrol/WorstGuardAtAll.php";
 include_once __DIR__ . "/../../bs-php-utils/utils.php";
@@ -22,7 +22,7 @@ class DataModel {
             'selection' => [],
             'references' => [
                 'depth' => 1, // options: 'deep' (as deep as possible) or 0 (don't resolve) or 1 or 2 or ...
-                'format' => 'url'   // options: 'data', 'keys', 'url'
+                'format' => 'key'   // options: 'data', 'keys', 'url'
             ],
             'flatten' => false,
             'emptyResult' => null
@@ -38,6 +38,10 @@ class DataModel {
         foreach ($this->entities as $name => $entity) {
             $this->connection->createEntity($entity);
         }
+    }
+
+    public function getConnection() {
+        return $this->connection;
     }
 
     public function setGuard($guard) {
@@ -86,8 +90,9 @@ class DataModel {
     }
 
     public function insert($entityName, $data = [], $metaData = []) {
-        if (!$this->guard->userCanInsert()) {
-            throw(new Exception("User is not allowed to insert into $entityName.", 403));
+        if (!$this->guard->userMay('create', $entityName)) {
+            $username = $this->guard->getUsername();
+            throw(new Exception("$username is not allowed to insert into $entityName.", 403));
         }
 
         $data = (array) $data;
@@ -97,6 +102,14 @@ class DataModel {
 
             $data = $this->insertRegularReferences($entityName, $data);
             $this->throwExceptionOnBadReference($entityName, $data);
+
+            $this->notifyObservers([
+                'subjectName' => $entityName,
+                'data'        => $data,
+                'user'        => $this->guard->getUsername(),
+                'context'     => 'beforeInsert',
+                'metaData'    => $metaData
+            ]);
 
             $id = $this->connection->insertIntoDatabase(
                 $this->getEntity($entityName),
@@ -139,7 +152,11 @@ class DataModel {
             if (array_key_exists($field, $data)) {
                 $refData = (array) $data[$field];
                 if (isAssoc($refData)) {
-                    $data[$field] = $this->upsert($ref['referencedEntity'], $refData, $refData);
+                    if ($ref['onBatchInsertion'] === 'upsert') {
+                        $data[$field] = $this->upsert($ref['referencedEntity'], $refData, $refData);
+                    } elseif ($ref['onBatchInsertion'] === 'insert') {
+                        $data[$field] = $this->insert($ref['referencedEntity'], $refData);
+                    }
                 }
             }
         }
@@ -171,6 +188,10 @@ class DataModel {
     }
 
     public function read($entityName, $options = []) {    
+        if (!$this->guard->userMay('read', $entityName)) {
+            $username = $this->guard->getUsername();
+            throw(new Exception("$username is not allowed to read $entityName.", 403));
+        }
         $this->readOptions->setValues($options);
         $filter    = $this->parseFilter($this->readOptions->valueOf('filter'), $entityName);
         $selection = $this->reshapeSelection($entityName, $this->readOptions->valueOf('selection'));
@@ -178,15 +199,19 @@ class DataModel {
         $flatten = $this->readOptions->valueOf('flatten');
         $emptyResult = $this->readOptions->valueOf('emptyResult');
         
-        if (!$this->guard->userCanRead()) {
+        if (!$this->guard->userMay('read', $entityName)) {
             throw(new Exception("User is not allowed to read from '$entityName' specified by " . jsenc($filter) . ".", 403));
         }
 
         $entity = $this->getEntity($entityName);
-        if ($this->guard->userNeedsPermission()) {
-            $data = $this->guard->deliverPermitted($this->connection, $entity, $filter, $selection['regular']);
+        $regularSelection = $selection['regular'];
+        if (count($regularSelection) === 0) {
+            $regularSelection = $entity->fieldNames();
+        }
+        if ($this->guard->permissionsNeeded($entityName)) {
+            $data = $this->guard->readPermitted($this->connection, $entity, $filter, $regularSelection);
         } else {
-            $data = $this->connection->readFromDatabase($entity, $filter, $selection['regular']);
+            $data = $this->connection->readFromDatabase($entity, $filter, $regularSelection);
         }
 
         $this->notifyObservers([
@@ -221,32 +246,46 @@ class DataModel {
     }
 
     public function idOf($entityName, $filter) {
-        $keyName = $this->getEntity($entityName)->unqiueKey();
+        $keyName = $this->getEntity($entityName)->uniqueKey();
         if (!$keyName) {
             throw(new Exception("DataModel->idOf: only works for entities with unique key.", 500));
         }
-        $result = $this->dataModel->read($entityName, [
+        $result = $this->read($entityName, [
             'filter' => $filter,
-            'select' => [$keyName],
+            'selection' => [$keyName],
             'flatten' => 'singleResult'
         ]);
-        if (!$result || count($result) > 1) {
-            throw(new Exception("DataModel->idOf: filter delivered no or a not unique result", 500));
+        if (count($result) === 1) {
+            return $result[$keyName];
         }
-        return $result['id'];
+        return null;
     }
 
     public function update($entityName, $data) {
-        $primaryKeyData = $this->getEntity($entityName)->primaryKeyData($data);
+        if (!$this->guard->userMay('update', $entityName)) {
+            $username = $this->guard->getUsername();
+            throw(new Exception("$username is not allowed to update $entityName.", 403));
+        }
+
+        $this->notifyObservers([
+            'subjectName' => $entityName,
+            'data' => $data,
+            'context' => 'beforeUpdate'
+        ]);
+
+        $entity = $this->getEntity($entityName);
+        $primaryKeyData = $entity->primaryKeyData($data);
         if ($primaryKeyData === null) {
             throw(new Exception("Can't identify object to update, because primary key data is missing.", 400));
         }
-        if (!$this->guard->userCanUpdate()) {
-            throw(new Exception("User is not allowed to update $entityName identified by ". jsenc($primaryKeyData), 403));
-        }
         $this->throwExceptionOnBadReference($entityName, $data);
-        $this->connection->updateDatabase($this->getEntity($entityName), $data);
-
+        if ($this->guard->permissionsNeeded($entityName)) {
+            $filter = $this->parseFilter($primaryKeyData, $entityName);
+            $this->guard->updatePermitted($this->connection, $entity, $filter, $data);
+        } else {
+            $this->connection->updateDatabase($this->getEntity($entityName), $data);
+        }
+        
         $this->notifyObservers([
             'subjectName' => $entityName,
             'data' => $data,
@@ -256,10 +295,7 @@ class DataModel {
 
     public function upsert($entityName, $filter, $data) {
         $entity = $this->getEntity($entityName);
-        $existing = $this->read($entityName, [
-            'filter' => $filter,
-            'references' => ['format' => 'key']
-        ]);
+        $existing = $this->read($entityName, ['filter' => $filter]);
         if ($existing) {
             if (count($existing) > 1) {
                 throw(new Exception("upsert-filter does not deliver an unique result", 400));
@@ -276,10 +312,24 @@ class DataModel {
     }
 
     public function delete($entityName, $filter = []) {
+        if (!$this->guard->userMay('delete', $entityName)) {
+            $username = $this->guard->getUsername();
+            throw(new Exception("$username is not allowed to delete $entityName.", 403));
+        }
+
+        $entity = $this->getEntity($entityName);
         $filter = $this->parseFilter($filter, $entityName);
 
-        if (!$this->guard->userCanDelete()) {
-            throw(new Exception("User is not allowed to delete '$entityName'", 403));
+        $this->notifyObservers([
+            'subjectName' => $entityName,
+            'filter' => $filter,
+            'context' => 'beforeDelete'
+        ]);
+
+        if ($this->guard->permissionsNeeded($entityName)) {
+            $this->guard->deletePermitted($this->connection, $entity, $filter);
+        } else {
+            $this->connection->deleteFromDatabase($entity, $filter);
         }
 
         $this->notifyObservers([
@@ -287,15 +337,10 @@ class DataModel {
             'filter' => $filter,
             'context' => 'onDelete'
         ]);
-
-        $this->connection->deleteFromDatabase($this->getEntity($entityName), $filter);
     }
 
-    public function resourceExists($entityName, $filter) {
-        $data = $this->read($entityName, [
-            'filter' => $filter,
-            'references' => ['format' => 'key']
-        ]);
+    public function resourceExists($entityName, $filter = []) {
+        $data = $this->read($entityName, ['filter' => $filter]);
         return $data !== null;
     }
 
@@ -303,7 +348,6 @@ class DataModel {
         $refs = $this->references->getList($entityName);
         $data = $this->read($entityName,[
             'filter'     => $filter,
-            'references' => ['format' => 'key'],
             'selection'  => array_column($containers, 'fields')
         ]);
         foreach ($data as $d) {
@@ -472,7 +516,6 @@ class DataModel {
     public function parseFilter($filter, $entityName) {
         $this->filterParser->defaultEntity = $entityName;
         return $this->filterParser->parseFilter($filter);
-        throw(new Exception('Cannot convert filter to query.', 500));
     }
 
     protected function reshapeSelection($entityName, $selection) {
@@ -516,9 +559,10 @@ class DataModel {
         if (!is_numeric($keyValue)) {
             $keyValue = sprintf("'%s'", $keyValue);
         }
-        return sprintf("http://%s:%s%s/crud.php?entity=%s&filter=%s&flatten=singleResult",
+        return sprintf("http://%s:%s%s%s/crud.php?entity=%s&filter=%s&flatten=singleResult",
             $_SERVER['SERVER_NAME'],
             $_SERVER['SERVER_PORT'],
+            FlexAPI::get('basePath'),
             FlexAPI::get('apiPath'),
             $entityName,
             "[$keyName,$keyValue]"
@@ -526,4 +570,3 @@ class DataModel {
     }
 }
 
-?>

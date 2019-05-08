@@ -7,7 +7,7 @@ abstract class Guard {
     protected $protectDataModel;
     protected $username = null;
     protected $userAccessLevel = null;
-    protected $tokenValidity = 3600; // 1 hour
+    protected $tokenValidity = 3600; // [seconds]
 
     protected static $JWT_SECRET = "itsVeryRainy2Day!";
 
@@ -15,37 +15,8 @@ abstract class Guard {
         $this->tokenValidity = $tokenValidity;
     }
 
-    public function userAccess() {
-        if (!$this->isLoggedIn()) {
-            throw(new Exception("No user is logged in.", 403));
-            // return 0;
-        } else {
-            return $this->getUserAccesLevel();
-        }
-    }
-
     public function getUsername() {
         return $this->username;
-    }
-
-    public function userCanRead() {
-        return $this->userAccess() > 0;
-    }
-
-    public function userCanInsert() {
-        return $this->userAccess() > 1;
-    }
-
-    public function userCanUpdate() {
-        return $this->userAccess() > 2;
-    }
-
-    public function userCanDelete() {
-        return $this->userAccess() > 3;
-    }
-
-    public function userNeedsPermission() {
-        return $this->userAccess() < 5;
     }
 
     public function addEntityToProtect($entityName) {
@@ -60,7 +31,8 @@ abstract class Guard {
         }
     }
 
-    protected function createJWT($validity /*in seconds*/) {
+    protected function createJWT() {
+        $validity = FlexAPI::get('jwtValidityDuration');
         $tokenId  = bin2hex(openssl_random_pseudo_bytes(32));
         $issuedAt = time();
         $expire   = $issuedAt + $validity;            // Adding session length in seconds
@@ -77,7 +49,7 @@ abstract class Guard {
 
         $token = JWT::encode(
             $data,      //Data to be encoded in the JWT
-            base64_decode(Guard::$JWT_SECRET), // The signing key
+            base64_decode($this->getJwtSecret()), // The signing key
             'HS512'     // Algorithm used to sign the token, see https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40#section-3
         );
         return $token;
@@ -85,11 +57,19 @@ abstract class Guard {
 
     protected function decodeJWT($jwt) {
         try {
-            $token = (array) JWT::decode($jwt, base64_decode(Guard::$JWT_SECRET), array('HS512'));
+            $token = (array) JWT::decode($jwt, base64_decode($this->getJwtSecret()), array('HS512'));
         } catch (Exception $exc) {
             throw(new Exception("Invalid authentication: ".$exc->getMessage(), 401));
         }
         return $token;
+    }
+
+    protected function getJwtSecret() {
+        if (Guard::$JWT_SECRET === null) {
+            $jwtConf = (array) json_decode(file_get_contents(__DIR__."/jwt.json"), true);
+            Guard::$JWT_SECRET = $jwtConf['secret'];
+        }
+        return Guard::$JWT_SECRET;
     }
 
     public abstract function login($authentification);
@@ -102,7 +82,15 @@ abstract class Guard {
 
     public abstract function isLoggedIn();
 
-    public abstract function deliverPermitted($connection, $entity, $filter, $selection);
+    public abstract function userMay($method, $entiyName);
+
+    public abstract function permissionsNeeded($entityName);
+
+    public abstract function readPermitted($connection, $entity, $filter, $selection);
+
+    public abstract function updatePermitted($connection, $entity, $filter, $data);
+
+    public abstract function deletePermitted($connection, $entity, $filter);
 
     protected abstract function getUserAccesLevel();
 
@@ -112,4 +100,3 @@ abstract class Guard {
 
 }
 
-?>

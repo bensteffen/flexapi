@@ -1,4 +1,3 @@
-
 <?php
 
 abstract class DataModelFactory {
@@ -20,4 +19,3 @@ abstract class DataModelFactory {
     public abstract function buildDataModel();
 }
 
-?>

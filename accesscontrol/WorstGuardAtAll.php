@@ -15,8 +15,24 @@ class WorstGuardAtAll extends Guard {
         return true;
     }
 
-    public function deliverPermitted($connection, $entity, $filter, $selection) {
+    public function userMay($method, $entiyName = null) {
+        return true;
+    }
+
+    public function permissionsNeeded($entityName) {
+        return false;
+    }
+
+    public function readPermitted($connection, $entity, $filter, $selection) {
         return null;
+    }
+
+    public function updatePermitted($connection, $entity, $filter, $data) {
+
+    }
+
+    public function deletePermitted($connection, $entity, $filter) {
+        
     }
 
     public function publish($rootEntityName, $filter, $accessLevel, $guestPassword) {
@@ -36,4 +52,3 @@ class WorstGuardAtAll extends Guard {
     }
 }
 
-?>

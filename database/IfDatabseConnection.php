@@ -7,7 +7,7 @@ interface IfDatabseConnection {
 
     public function insertIntoDatabase($entity, $data);
 
-    public function readFromDatabase($entity, $filter, $fieldSelection);
+    public function readFromDatabase($entity, $filter, $fieldSelection, $distinct);
 
     public function updateDatabase($entity, $data);
 
@@ -20,4 +20,3 @@ interface IfDatabseConnection {
     function finishData($entity, $data);
 }
 
-?>

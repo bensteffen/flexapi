@@ -73,6 +73,7 @@ function parseUrlParameters($queries) {
     if (array_key_exists('refs', $queries)) {
         $refs = getReferenceParameters($queries['refs']);
     }
+    $refs = setFieldDefault($refs, 'format', 'url');
 
     $flatten = false;
     if (array_key_exists('flatten', $queries)) {
@@ -108,4 +109,3 @@ function getReferenceParameters($query) {
     return $refParameters;
 }
 
-?>

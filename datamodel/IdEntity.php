@@ -13,4 +13,3 @@ class IdEntity extends DataEntity {
     }
 }
 
-?>

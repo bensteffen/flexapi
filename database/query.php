@@ -176,4 +176,3 @@ class QuerySequence extends QueryElement {
     }
 }
 
-?>

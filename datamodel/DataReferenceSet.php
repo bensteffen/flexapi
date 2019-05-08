@@ -23,6 +23,7 @@ class DataReferenceSet {
         }
 
         $ref = setFieldDefault($ref, 'direction', 'regular');
+        $ref = setFieldDefault($ref, 'onBatchInsertion', 'insert'); /* options: 'insert' or 'upsert' */
 
         $direction = $ref['direction'];
         if ($direction !== 'regular' && $direction !== 'inverse') {
@@ -113,4 +114,3 @@ class DataReferenceSet {
     }
 }
 
-?>

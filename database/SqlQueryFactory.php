@@ -20,11 +20,16 @@ class SqlQueryFactory {
         );
     }
 
-    public static function makeSelectQuery($entity, $filter = [], $fieldSelection = []) {
+    public static function makeSelectQuery($entity, $filter = [], $fieldSelection = [], $distinct = false) {
         if (count($fieldSelection) === 0) {
             $fieldSelection = $entity->fieldNames();
         }
-        return sprintf("SELECT %s FROM `%s` %s WHERE %s",
+        $select = 'SELECT';
+        if ($distinct) {
+            $select .= ' DISTINCT';
+        }
+        return sprintf("%s %s FROM `%s` %s WHERE %s",
+            $select,
             Sql::Sequence($fieldSelection, function($f) use($entity) {
                 return Sql::Column($f, $entity->getName());
             })->toQuery(),
@@ -55,9 +60,11 @@ class SqlQueryFactory {
     }
 
     public static function makeDeleteQuery($entity, $filter) {
-        return sprintf("DELETE FROM `%s` WHERE %s",
+        return sprintf("DELETE `%s` FROM `%s` %s WHERE %s",
             $entity->getName(),
-            Sql::attachCreator($filter)->toQuery()
+            $entity->getName(),
+            SqlQueryFactory::makeReferencedTablesJoinQuery(array_merge($filter['references'])),
+            Sql::attachCreator($filter['tree'])->toQuery()
         );
     }
 
@@ -98,6 +105,9 @@ class SqlQueryFactory {
             if ($field['notNull'] === true) {
                 $createString = sprintf("%s %s", $createString, "NOT NULL");
             }
+            if (array_key_exists('default', $field)) {
+                $createString = sprintf("%s %s %s", $createString, "DEFAULT", jsenc($field['default']));
+            }
             if (array_key_exists('autoIncrement', $field) && $field['autoIncrement'] === true) {
                 $createString = sprintf("%s %s", $createString, "AUTO_INCREMENT");
             }
@@ -134,4 +144,3 @@ class SqlQueryFactory {
     }
 }
 
-?>
