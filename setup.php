@@ -21,10 +21,10 @@ try {
 
     $request = (array) json_decode(file_get_contents("php://input"));
 
-    if (!array_key_exists('resetSecret', $request)) {
+    if (!array_key_exists('setupSecret', $request)) {
         throw(new Exception('Setup secret missing.'));
     }
-    if ($request['resetSecret'] !== FlexAPI::get('setupSecret')) {
+    if ($request['setupSecret'] !== FlexAPI::get('setupSecret')) {
         throw(new Exception('Setup secret invalid.'));
     }
 
