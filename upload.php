@@ -2,7 +2,7 @@
 
 include_once __DIR__ . '/FlexAPI.php';
 include_once __DIR__ . '/requestutils/jwt.php';
-include_once __DIR__ . '/../bs-php-utils/utils.php';
+include_once __DIR__ . '/../../bensteffen/bs-php-utils/utils.php';
 
 try {
 

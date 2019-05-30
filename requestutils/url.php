@@ -1,6 +1,6 @@
 <?php
 
-include_once __DIR__ . "/../../bs-php-utils/utils.php";
+include_once __DIR__ . "/../../../bensteffen/bs-php-utils/utils.php";
 
 function parseArrayString($str) {
     if (preg_match("/^\[.*\]$/", $str)) {
