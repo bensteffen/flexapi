@@ -72,8 +72,8 @@ class SqlConnection implements IfDatabseConnection {
         $joinQuery = SqlQueryFactory::makeJoinQuery($type, $entity1, $entity2, $condition, $selection, $filter);
         // echo "<br>join query: $joinQuery<br>";
         $data = $this->fetchData($this->executeQuery($joinQuery));
-        $data = $this->finishData($entity1, $data); 
-        $data = $this->finishData($entity2, $data); 
+        $data = $this->finishData($entity1, $data);
+        $data = $this->finishData($entity2, $data);
         return $data;
     }
 

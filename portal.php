@@ -60,7 +60,7 @@ try {
         ]);
         $response = ["message" => "User was deleted."];
     } elseif ($request["concern"] === "publish") {
-        
+
     } else {
         throw(new Exception("Unknown concern ".$request['concern'].".", 401));
     }

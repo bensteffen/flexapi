@@ -95,7 +95,7 @@ function parseUrlParameters($queries) {
 // function getSelectParameter($query) {
 //     $select = [];
 
-//     preg_match_all("/(and|or)?\([\w\s\-_]+,[\w\s\-_]+,?[\w\s\-_]*\)/", $query, $selectQuery);  
+//     preg_match_all("/(and|or)?\([\w\s\-_]+,[\w\s\-_]+,?[\w\s\-_]*\)/", $query, $selectQuery);
 // }
 
 function getReferenceParameters($query) {

@@ -78,7 +78,7 @@ class FilterParser {
             if (count($condRes) === 3) {
                 $expStr1 = $condRes[0];
                 $expStr2 = $condRes[2];
-                $op = $condRes[1];         
+                $op = $condRes[1];
             }
             $exp1 = FilterParser::parseQueryString($expStr1);
             $exp2 = FilterParser::parseQueryString($expStr2);

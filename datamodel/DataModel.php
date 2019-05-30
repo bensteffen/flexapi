@@ -132,9 +132,9 @@ class DataModel {
                 'context'     => 'onInsert',
                 'metaData'    => $metaData
             ]);
-    
+
             $this->insertInverseReferences($entityName, $id, $data);
-    
+
             return $id;
         } else {
             $ids = [];
@@ -187,7 +187,7 @@ class DataModel {
         return $data;
     }
 
-    public function read($entityName, $options = []) {    
+    public function read($entityName, $options = []) {
         if (!$this->guard->userMay('read', $entityName)) {
             $username = $this->guard->getUsername();
             throw(new Exception("$username is not allowed to read $entityName.", 403));
@@ -198,7 +198,7 @@ class DataModel {
         $referenceConfig = $this->reshapeReferenceConfig($this->readOptions->valueOf('references'));
         $flatten = $this->readOptions->valueOf('flatten');
         $emptyResult = $this->readOptions->valueOf('emptyResult');
-        
+
         if (!$this->guard->userMay('read', $entityName)) {
             throw(new Exception("User is not allowed to read from '$entityName' specified by " . jsenc($filter) . ".", 403));
         }
@@ -285,7 +285,7 @@ class DataModel {
         } else {
             $this->connection->updateDatabase($this->getEntity($entityName), $data);
         }
-        
+
         $this->notifyObservers([
             'subjectName' => $entityName,
             'data' => $data,
@@ -537,7 +537,7 @@ class DataModel {
             }
         }
         $regSelection = arrayIgnore($selection, $invSelection);
-        
+
         $output = [
             'regular' => $regSelection,
             'inverse' => $invSelection,

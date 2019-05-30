@@ -24,7 +24,7 @@ try {
 
     $rootFolder = FlexAPI::get('appRoot');
     $uploadFolder = FlexAPI::get('uploadFolder');
-    
+
     $resourcePath = $uploadFolder.'/'.FlexAPI::guard()->getUsername().'/'.$resourcePath;
     $completePath = $rootFolder.$resourcePath;
     if (!is_dir($completePath)) {
@@ -41,7 +41,7 @@ try {
     ], assocIgnore($_POST, ['format', 'filename']));
 
     $response['id'] = $id;
-    echo jsenc($response); 
+    echo jsenc($response);
 
 } catch (Exception $exc) {
     echo jsenc([
