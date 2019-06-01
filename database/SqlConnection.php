@@ -6,6 +6,7 @@ include_once __DIR__ . '/../../../bensteffen/bs-php-utils/utils.php';
 
 class SqlConnection implements IfDatabseConnection {
     private $dbConnection = null;
+    private $dbDatabase = null;
 
     public function __construct($credentials) {
         if ($credentials) {
@@ -15,6 +16,8 @@ class SqlConnection implements IfDatabseConnection {
 
     public function establish($credentials) {
         if (!$this->dbConnection) {
+            $this->dbDatabase = $credentials['database'];
+
             $this->dbConnection = new mysqli(
                 $credentials['host'],
                 $credentials['username'],
@@ -72,9 +75,27 @@ class SqlConnection implements IfDatabseConnection {
         $joinQuery = SqlQueryFactory::makeJoinQuery($type, $entity1, $entity2, $condition, $selection, $filter);
         // echo "<br>join query: $joinQuery<br>";
         $data = $this->fetchData($this->executeQuery($joinQuery));
-        $data = $this->finishData($entity1, $data); 
-        $data = $this->finishData($entity2, $data); 
+        $data = $this->finishData($entity1, $data);
+        $data = $this->finishData($entity2, $data);
         return $data;
+    }
+
+    public function dropTable($name) {
+        $name = mysql_escape_string($name);
+        $db->executeQuery("DROP TABLE IF EXISTS {$name}");
+    }
+
+    public function dropAllTables() {
+        $this->executeQuery("SET FOREIGN_KEY_CHECKS = 0");
+        try {
+          $name = mysql_escape_string($this->dbDatabase);
+          $tablesResp = $db->executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = {$name}");
+          while($row = $tablesResp->fetch_assoc()) {
+            $this->dropTable($row['table_name']);
+          }
+        } finally {
+          $db->executeQuery("SET FOREIGN_KEY_CHECKS = 1");
+        }
     }
 
     function prepareData($entity, $data) {
@@ -118,13 +139,11 @@ class SqlConnection implements IfDatabseConnection {
     }
 
     protected function fetchData($result) {
-        if ($result && $result->num_rows > 0) {
-            $output = [];
+        $output = [];
+        if ($result) {
             while($row = $result->fetch_assoc()) {
                 array_push($output,$row);
             }
-        } else {
-            $output = [];
         }
         return $output;
     }
