@@ -130,7 +130,7 @@ class SqlConnection implements IfDatabseConnection {
         return $data;
     }
 
-    private function executeQuery($sqlQuery) {
+    public function executeQuery($sqlQuery) {
         $result = $this->dbConnection->query($sqlQuery);
         if (!$result) {
             throw(new Exception($this->dbConnection->error, 404));
