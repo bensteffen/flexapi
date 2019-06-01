@@ -152,6 +152,10 @@ class SqlConnection implements IfDatabseConnection {
         if ($this->dbConnection === null) {
             throw(new Exception('SqlConnection.checkConnection(): No connection established', 500));
         }
+
+        if ($this->dbConnection->connect_errno) {
+            throw(new Exception('SqlConnection.checkConnection(): Failed to connect', 500));
+        }
     }
 
     protected function transformByType($entity, $data, $typeName, $transformation) {
