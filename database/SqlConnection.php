@@ -81,20 +81,20 @@ class SqlConnection implements IfDatabseConnection {
     }
 
     public function dropTable($name) {
-        $name = mysql_escape_string($name);
-        $db->executeQuery("DROP TABLE IF EXISTS {$name}");
+        $name = $this->dbConnection->real_escape_string($name);
+        $this->executeQuery("DROP TABLE IF EXISTS {$name}");
     }
 
     public function dropAllTables() {
         $this->executeQuery("SET FOREIGN_KEY_CHECKS = 0");
         try {
-          $name = mysql_escape_string($this->dbDatabase);
-          $tablesResp = $db->executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = {$name}");
+          $name = $this->dbConnection->real_escape_string($this->dbDatabase);
+          $tablesResp = $this->executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = \"{$name}\"");
           while($row = $tablesResp->fetch_assoc()) {
             $this->dropTable($row['table_name']);
           }
         } finally {
-          $db->executeQuery("SET FOREIGN_KEY_CHECKS = 1");
+          $this->executeQuery("SET FOREIGN_KEY_CHECKS = 1");
         }
     }
 
