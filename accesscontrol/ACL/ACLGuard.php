@@ -72,8 +72,8 @@ class ACLGuard extends Guard {
                 throw(new Exception("Authentication not valid anymore.", 401));
             }
             $token = $this->decodeJWT($auth);
-            $payload = (array) $token['data']; 
-            
+            $payload = (array) $token['data'];
+
             $this->username = $payload['user'];
             $this->crudPermissions = $this->getCrudPermissions();
 
@@ -83,7 +83,7 @@ class ACLGuard extends Guard {
 
     public function logout($jwt) {
         $token = $this->decodeJWT($jwt);
-        $payload = (array) $token['data']; 
+        $payload = (array) $token['data'];
         $this->acModel->insert('jwtblacklist',[
             'jwt' => $jwt,
             'expire' => $payload['expire']
@@ -288,7 +288,7 @@ class ACLGuard extends Guard {
             'entityId' => $entityId
         ]);
     }
-    
+
 
     protected function getUserAccesLevel() {
         return $this->userAccessLevel;

@@ -32,7 +32,7 @@ class WorstGuardAtAll extends Guard {
     }
 
     public function deletePermitted($connection, $entity, $filter) {
-        
+
     }
 
     public function publish($rootEntityName, $filter, $accessLevel, $guestPassword) {
@@ -48,7 +48,7 @@ class WorstGuardAtAll extends Guard {
     }
 
     protected function onNewEntity($entityName) {
-        
+
     }
 }
 
