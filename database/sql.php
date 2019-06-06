@@ -16,7 +16,7 @@ class SqlCreator implements QueryCreator {
                 $str = jsenc($str);
             }
         }
-        return $str;
+        return $str;  
     }
 
     public function makeColumn($column) {

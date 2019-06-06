@@ -13,11 +13,15 @@ class SqlQueryFactory {
         // $sqlFormat = "CREATE TABLE IF NOT EXISTS `%s` (%s%s) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;";
         $sqlFormat = "CREATE TABLE IF NOT EXISTS `%s` (%s%s) ENGINE=InnoDB  DEFAULT CHARSET=utf8;";
         return sprintf(
-            $sqlFormat,
+            $sqlFormat, 
             $entity->getName(),
             SqlQueryFactory::fieldSetToCreateString($entity->getFieldSet()),
             $pkQuery
         );
+    }
+
+    public static function makeDropQuery($entity) {
+        return sprintf("DROP TABLE IF EXISTS %s;", $entity->getName());
     }
 
     public static function makeSelectQuery($entity, $filter = [], $fieldSelection = [], $distinct = false) {
@@ -97,7 +101,7 @@ class SqlQueryFactory {
             if (!array_key_exists('notNull', $field)) {
                 $field['notNull'] = true;
             }
-
+            
             $createString = sprintf("`%s` %s", $field['name'], $type);
             if (array_key_exists('length', $field)) {
                 $createString = sprintf("%s(%s)", $createString, $field['length']."");

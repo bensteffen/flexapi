@@ -11,5 +11,5 @@ class RoleAssignment extends DataEntity {
             ['name' => 'user', 'type' => 'varchar', 'length' => 32, 'primary' => true],
         ]);
     }
-
+    
 }
