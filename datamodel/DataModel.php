@@ -3,7 +3,7 @@
 include_once __DIR__ . "/../FlexAPI.php";
 include_once __DIR__ . "/DataReferenceSet.php";
 include_once __DIR__ . "/../../bs-php-utils/Options.php";
-include_once __DIR__ . "/../accesscontrol/WorstGuardAtAll.php";
+include_once __DIR__ . "/../accesscontrol/VoidGuard.php";
 include_once __DIR__ . "/../../bs-php-utils/utils.php";
 
 class DataModel {
@@ -28,7 +28,7 @@ class DataModel {
             'emptyResult' => null
         ]);
         $this->references = new DataReferenceSet();
-        $this->setGuard(new WorstGuardAtAll());
+        $this->setGuard(new VoidGuard());
         $this->filterParser =  new FilterParser();
         $this->filterParser->dataModel = $this;
     }
@@ -69,6 +69,13 @@ class DataModel {
     public function addEntities($entities) {
         foreach ($entities as $entity) {
             $this->addEntity($entity);
+        }
+    }
+
+    public function reset() {
+        foreach ($this->entities as $entity) {
+            $this->connection->clearEntity($entity);
+            $this->connection->createEntity($entity);
         }
     }
 

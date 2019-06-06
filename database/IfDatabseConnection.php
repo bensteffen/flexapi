@@ -15,6 +15,8 @@ interface IfDatabseConnection {
 
     public function joinTables($type, $baseEntity, $joinedEntity, $joinConditions, $selection, $filter);
 
+    public function clearEntity($entity);
+
     function prepareData($entity, $data);
 
     function finishData($entity, $data);

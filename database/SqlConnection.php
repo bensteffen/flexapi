@@ -29,6 +29,12 @@ class SqlConnection implements IfDatabseConnection {
         $this->createTable($entity);
     }
 
+    public function clearEntity($entity) {
+        $clearQuery = SqlQueryFactory::makeDropQuery($entity);
+        // echo "<br>clear query: $clearQuery<br>";
+        $this->executeQuery($clearQuery);
+    }
+
     public function insertIntoDatabase($entity, $data){
         $this->checkConnection();
         $insertQuery = SqlQueryFactory::makeInsertQuery($entity, $this->prepareData($entity, $data));

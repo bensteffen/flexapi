@@ -20,6 +20,10 @@ class SqlQueryFactory {
         );
     }
 
+    public static function makeDropQuery($entity) {
+        return sprintf("DROP TABLE IF EXISTS %s;", $entity->getName());
+    }
+
     public static function makeSelectQuery($entity, $filter = [], $fieldSelection = [], $distinct = false) {
         if (count($fieldSelection) === 0) {
             $fieldSelection = $entity->fieldNames();
