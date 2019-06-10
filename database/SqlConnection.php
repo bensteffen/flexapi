@@ -6,6 +6,7 @@ include_once __DIR__ . '/../../../bensteffen/bs-php-utils/utils.php';
 
 class SqlConnection implements IfDatabseConnection {
     private $dbConnection = null;
+    private $dbDatabase = null;
 
     public function __construct($credentials) {
         if ($credentials) {
@@ -15,6 +16,8 @@ class SqlConnection implements IfDatabseConnection {
 
     public function establish($credentials) {
         if (!$this->dbConnection) {
+            $this->dbDatabase = $credentials['database'];
+
             $this->dbConnection = new mysqli(
                 $credentials['host'],
                 $credentials['username'],
@@ -77,6 +80,24 @@ class SqlConnection implements IfDatabseConnection {
         return $data;
     }
 
+    public function dropTable($name) {
+        $name = $this->dbConnection->real_escape_string($name);
+        $this->executeQuery("DROP TABLE IF EXISTS {$name}");
+    }
+
+    public function dropAllTables() {
+        $this->executeQuery("SET FOREIGN_KEY_CHECKS = 0");
+        try {
+          $name = $this->dbConnection->real_escape_string($this->dbDatabase);
+          $tablesResp = $this->executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = \"{$name}\"");
+          while($row = $tablesResp->fetch_assoc()) {
+            $this->dropTable($row['table_name']);
+          }
+        } finally {
+          $this->executeQuery("SET FOREIGN_KEY_CHECKS = 1");
+        }
+    }
+
     function prepareData($entity, $data) {
         $objectKeys = extractByKey('name', array_filter($entity->getFieldSet(), function($f) {
             return $f['type'] === 'object';
@@ -109,7 +130,7 @@ class SqlConnection implements IfDatabseConnection {
         return $data;
     }
 
-    private function executeQuery($sqlQuery) {
+    public function executeQuery($sqlQuery) {
         $result = $this->dbConnection->query($sqlQuery);
         if (!$result) {
             throw(new Exception($this->dbConnection->error, 404));
@@ -118,13 +139,11 @@ class SqlConnection implements IfDatabseConnection {
     }
 
     protected function fetchData($result) {
-        if ($result && $result->num_rows > 0) {
-            $output = [];
+        $output = [];
+        if ($result) {
             while($row = $result->fetch_assoc()) {
                 array_push($output,$row);
             }
-        } else {
-            $output = [];
         }
         return $output;
     }
@@ -132,6 +151,10 @@ class SqlConnection implements IfDatabseConnection {
     protected function checkConnection() {
         if ($this->dbConnection === null) {
             throw(new Exception('SqlConnection.checkConnection(): No connection established', 500));
+        }
+
+        if ($this->dbConnection->connect_errno) {
+            throw(new Exception('SqlConnection.checkConnection(): Failed to connect', 500));
         }
     }
 
