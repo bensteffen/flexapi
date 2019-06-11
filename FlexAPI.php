@@ -30,6 +30,10 @@ class FlexAPI {
         FlexAPI::$apiDefinition['dataModel'] = $factory->createDataModel($connection, $guard);
         $voidGuard = new VoidGuard();
         FlexAPI::$apiDefinition['superAccess'] = $factory->createDataModel($connection, $voidGuard);
+
+        FlexAPI::sendEvent([
+            'eventId' => 'api-defined'
+        ]);
     }
 
     public static function setup($request) {
