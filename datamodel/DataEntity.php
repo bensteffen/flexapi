@@ -55,6 +55,11 @@ class DataEntity {
         return null;
     }
 
+    public function uniqueFilter($keyValue) {
+        $keyName = $this->uniqueKey();
+        return [$keyName => $keyValue];
+    }
+
     public function primaryKeys() {
         $primaryFields = array_filter($this->fieldSet, function($f) {
             return array_key_exists('primary', $f) && $f['primary'];
