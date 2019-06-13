@@ -47,13 +47,14 @@ function flexapiPortal() {
                 'request' => $request
             ]);
     
-            FlexAPI::guard()->registerUser($request['username'], $request['password']);
+            $verificationData = FlexAPI::guard()->registerUser($request['username'], $request['password']);
     
             FlexAPI::sendEvent([
                 'eventId' => 'after-user-registration',
                 'request' => $request
             ]);
             $response = ["message" => "User was created."];
+            $response = array_merge($response, $verificationData);
         } elseif ($request["concern"] === "unregister") {
             FlexAPI::sendEvent([
                 'eventId' => 'before-user-unregistration',
@@ -70,6 +71,7 @@ function flexapiPortal() {
         } elseif ($request['concern'] === 'verify') {
             FlexAPI::guard()->verifyUser($request['token']);
             $response = ["message" => "Account was verfified."];
+
         } elseif ($request["concern"] === "publish") {
             
         } else {

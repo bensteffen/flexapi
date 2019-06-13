@@ -9,6 +9,7 @@ class EmailVerificationService implements IfVerficationService {
     protected $acModel = null;
     protected $validityDuration;
     protected $writeMail;
+    protected $navigateTo;
 
     public function __construct($writeEmail, $jwtService = null) {
         $this->writeMail = $writeEmail;
@@ -31,13 +32,16 @@ class EmailVerificationService implements IfVerficationService {
     public function startVerification($data) {
         $token = $this->jwtService->encode([ 'payload' => [
             'username' => $data['username'],
-            'address' => $data['address'] 
+            'address' => $data['address'],
+            'forwardTo' => $data['forwardTo']
         ]]);
         $this->acModel->insert('userverification', [
             'expires' => time() + $this->validityDuration,
             'token' => $token
         ]);
         $this->sendVerificationMail($data['address'], $token);
+
+        return [];
     }
 
     public function finishVerification($data) {
@@ -65,7 +69,10 @@ class EmailVerificationService implements IfVerficationService {
         $user['isVerified'] = true;
         $this->acModel->update('user', $user);
 
-        return $user['name'];
+        return [
+            'username' => $user['name'],
+            'forwardTo' => $payload['forwardTo']
+        ];
     }
 
 

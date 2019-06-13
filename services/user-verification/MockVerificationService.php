@@ -36,6 +36,9 @@ class MockVerificationService implements IfVerficationService {
             'token' => $token
         ]);
         $this->sendVerificationMail($data['address'], $token);
+        return [
+            'token' => $token
+        ];
     }
 
     public function finishVerification($data) {
@@ -63,11 +66,12 @@ class MockVerificationService implements IfVerficationService {
         $user['isVerified'] = true;
         $this->acModel->update('user', $user);
 
-        return $user['name'];
+        return [
+            'username' => $user['name']
+        ];
     }
 
     protected function sendVerificationMail($address, $token) {
-        $content = ['token' => $token];
-        file_put_contents($address.'.json', json_encode($content));
+
     }
 }
