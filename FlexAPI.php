@@ -113,6 +113,12 @@ class FlexAPI {
         }
     }
 
+    public static function navigateTo($url) {
+        header('Content-Type: text/html');
+        echo '<script>window.location.href="'.$url.'"</script>';
+        die;
+    }
+
     public static function sendMail($data) {
         $settings = FlexAPI::get('mailing');
         
