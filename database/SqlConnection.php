@@ -61,9 +61,10 @@ class SqlConnection implements IfDatabseConnection {
         $this->checkConnection();
         $createQuery = SqlQueryFactory::makeCreateQuery($entity);
         // echo "<br>create query: $createQuery<br>";
-        if (!$this->executeQuery($createQuery)) {
-            throw(new Exception(sprintf('SqlConnection.createTable(): Could not create table for entity "%s"', $entity->getName()), 500));
-        }
+        $this->executeQuery($createQuery);
+        // if (!$this->executeQuery($createQuery)) {
+        //     throw(new Exception(sprintf('SqlConnection.createTable(): Could not create table for entity "%s"', $entity->getName()), 500));
+        // }
     }
 
     public function deleteFromDatabase($entity, $filter){
@@ -118,7 +119,7 @@ class SqlConnection implements IfDatabseConnection {
     private function executeQuery($sqlQuery) {
         $result = $this->dbConnection->query($sqlQuery);
         if (!$result) {
-            throw(new Exception($this->dbConnection->error, 404));
+            throw(new Exception('Could not execute query --> '.$sqlQuery.' <--": '.$this->dbConnection->error, 500));
         }
         return $result;
     }

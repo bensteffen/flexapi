@@ -106,18 +106,37 @@ class SqlQueryFactory {
             if (array_key_exists('length', $field)) {
                 $createString = sprintf("%s(%s)", $createString, $field['length']."");
             }
-            if ($field['notNull'] === true) {
-                $createString = sprintf("%s %s", $createString, "NOT NULL");
-            }
-            if (array_key_exists('default', $field)) {
-                $createString = sprintf("%s %s %s", $createString, "DEFAULT", jsenc($field['default']));
-            }
             if (array_key_exists('autoIncrement', $field) && $field['autoIncrement'] === true) {
                 $createString = sprintf("%s %s", $createString, "AUTO_INCREMENT");
+            } else {
+                if ($field['notNull'] === true) {
+                    $createString = sprintf("%s %s", $createString, "NOT NULL");
+                }
+                if ($field['notNull'] === true || array_key_exists('default', $field)) {
+                    $default = SqlQueryFactory::getDefaultValue($field);
+                    $createString = sprintf("%s %s %s", $createString, "DEFAULT", jsenc($default));
+                }
             }
             array_push($createStrings, $createString);
         }
         return implode(", ",$createStrings);
+    }
+
+    protected static function getDefaultValue($field) {
+        if (array_key_exists('default', $field)) {
+            return $field['default'];
+        }
+        switch ($field['type']) {
+            case 'varchar':
+            case 'text':
+                return '';
+            case 'int':
+            case 'decimal':
+                return 0;
+            case 'boolean':
+            case 'bool':
+                return false;
+        }
     }
 
     protected static function makeReferencedTablesJoinQuery($references) {
