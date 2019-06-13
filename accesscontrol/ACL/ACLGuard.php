@@ -57,8 +57,9 @@ class ACLGuard extends Guard {
             $verificationEnabled = $verification['enabled'];
         }
 
+        $verificationData = [];
         if ($verificationEnabled) {
-            $this->verificationService->startVerification([
+            $verificationData = $this->verificationService->startVerification([
                 'username' => $username,
                 'address' => $username
             ]);
@@ -69,14 +70,17 @@ class ACLGuard extends Guard {
             'password' => password_hash($password, PASSWORD_DEFAULT),
             'isVerified' => !$verificationEnabled
         ]);
+
+        return $verificationData;
     }
 
     public function verifyUser($token) {
-        $username = $this->verificationService->finishVerification([ 'token' => $token ]);
+        $responseData = $this->verificationService->finishVerification([ 'token' => $token ]);
         FlexAPI::sendEvent([
             'eventId' => 'after-user-verification',
-            'username' => $username
+            'response' => $responseData
         ]);
+        return $responseData;
     }
 
     public function unregisterUser($username, $password) {
