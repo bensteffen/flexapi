@@ -13,8 +13,6 @@ interface IfDatabseConnection {
 
     public function deleteFromDatabase($entity, $filter);
 
-    public function joinTables($type, $baseEntity, $joinedEntity, $joinConditions, $selection, $filter);
-
     public function clearEntity($entity);
 
     function prepareData($entity, $data);
