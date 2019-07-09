@@ -131,11 +131,15 @@ class SqlQueryFactory {
             case 'text':
                 return '';
             case 'int':
+            case 'smallint':
             case 'decimal':
+            case 'timestamp':
                 return 0;
             case 'boolean':
             case 'bool':
                 return false;
+            case 'date':
+                return '1970-01-01';
         }
     }
 
