@@ -71,7 +71,6 @@ function flexapiPortal() {
         } elseif ($request['concern'] === 'verify') {
             FlexAPI::guard()->verifyUser($request['token']);
             $response = ["message" => "Account was verfified."];
-
         } elseif ($request["concern"] === "publish") {
             
         } else {

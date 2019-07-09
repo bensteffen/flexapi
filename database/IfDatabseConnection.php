@@ -15,6 +15,8 @@ interface IfDatabseConnection {
 
     public function clearEntity($entity);
 
+    public function clearEntity($entity);
+
     function prepareData($entity, $data);
 
     function finishData($entity, $data);
