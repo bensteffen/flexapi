@@ -1,6 +1,7 @@
 <?php
 
 include_once __DIR__ . "/IfDatabseConnection.php";
+include_once __DIR__ . "/AbstractSqlConnection.php";
 include_once __DIR__ . "/SqlQueryFactory.php";
 include_once __DIR__ . '/../../bs-php-utils/utils.php';
 
@@ -33,12 +34,6 @@ class SqlConnection extends AbstractSqlConnection implements IfDatabseConnection
         // if (!$this->executeQuery($createQuery)) {
         //     throw(new Exception(sprintf('SqlConnection.createTable(): Could not create table for entity "%s"', $entity->getName()), 500));
         // }
-    }
-
-    public function clearEntity($entity) {
-        $clearQuery = SqlQueryFactory::makeDropQuery($entity);
-        // echo "<br>clear query: $clearQuery<br>";
-        $this->executeQuery($clearQuery);
     }
 
     public function clearEntity($entity) {

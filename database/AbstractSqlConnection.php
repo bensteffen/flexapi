@@ -1,7 +1,7 @@
 <?php
 
 class AbstractSqlConnection {
-    protected function prepareData($entity, $data) {
+    public function prepareData($entity, $data) {
         $objectKeys = extractByKey('name', array_filter($entity->getFieldSet(), function($f) {
             return $f['type'] === 'object';
         }));
@@ -11,7 +11,7 @@ class AbstractSqlConnection {
         return $data;
     }
     
-    protected function finishData($entity, $data) {
+    public function finishData($entity, $data) {
         $objectKeys = extractByKey('name', array_filter($entity->getFieldSet(), function($f) {
             return $f['type'] === 'object';
         }));
