@@ -35,7 +35,7 @@ class FilterParser {
             return new QueryVoid();
         }
         list($column, $value) = assocShift($filterArray);
-        $colRes = FilterParser::parseColumn($column, $this->defaultEntity, $this->defaultDatabase);
+        $colRes = FilterParser::parseColumn($column, $this->dataModel, $this->defaultEntity, $this->defaultDatabase);
         $queryCol = new QueryColumn($colRes[2], $colRes[1], $colRes[0]);
         $cond = new QueryCondition($queryCol, new QueryValue($value));
 

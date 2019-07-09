@@ -15,12 +15,16 @@ class SqlConnection extends AbstractSqlConnection implements IfDatabseConnection
 
     public function establish($credentials) {
         if (!$this->dbConnection) {
-            $this->dbConnection = new mysqli(
-                $credentials['host'],
-                $credentials['username'],
-                $credentials['password'],
-                $credentials['database']
-            );
+            $dsn = $credentials['driver'].':host='.$credentials['host'];
+            $dsn .= ';dbname='.$credentials['database'];
+
+            $options = [
+                PDO::ATTR_EMULATE_PREPARES   => false, // turn off emulation mode for "real" prepared statements
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, //turn on errors in the form of exceptions
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, //make the default fetch be an associative array
+            ];
+
+            $this->dbConnection = new PDO($dsn, $credentials['user'], $credentials['password'], $options);
             $this->checkConnection();
         }
     }
@@ -43,15 +47,16 @@ class SqlConnection extends AbstractSqlConnection implements IfDatabseConnection
 
     public function insertIntoDatabase($entity, $data){
         $this->checkConnection();
-        $insertQuery = SqlQueryFactory::makeInsertQuery($entity, $this->prepareData($entity, $data));
+        $insertQuery = SqlQueryFactory::makeInsertQuery($entity, $this->getPlaceholders($data));
+        // $this->prepareData($entity, $data)
         // echo "<br>insert query: $insertQuery<br>";
-        $this->executeQuery($insertQuery);
-        return $this->dbConnection->insert_id;
+        $this->executeQuery($insertQuery, $data);
+        return $this->dbConnection->lastInsertId();
     }
 
-    public function readFromDatabase($entity, $filter, $fieldSelection, $entityReferences = [], $distinct = true, $order = [], $pagination = []) {
+    public function readFromDatabase($entity, $filter, $fieldSelection, $entityReferences = [], $distinct = true) {
         $this->checkConnection();
-        $selectQuery = SqlQueryFactory::makeSelectQuery($entity, $filter, $fieldSelection, $distinct, $order, $pagination);
+        $selectQuery = SqlQueryFactory::makeSelectQuery($entity, $filter, $fieldSelection, $distinct);
         // echo "<br>select query: $selectQuery<br>";
         return $this->finishData($entity, $this->fetchData($this->executeQuery($selectQuery)));
     }
@@ -70,12 +75,13 @@ class SqlConnection extends AbstractSqlConnection implements IfDatabseConnection
         $this->executeQuery($deleteQuery);
     }
 
-    private function executeQuery($sqlQuery) {
-        $result = $this->dbConnection->query($sqlQuery);
-        if (!$result) {
-            throw(new Exception('Could not execute query --> '.$sqlQuery.' <--": '.$this->dbConnection->error, 500));
+    private function executeQuery($query, $data) {
+        try {
+            $statement = $this->dbConnection->prepare($query);
+            $statement->execute($data);
+        } catch (PDOException $exc) {
+            throw(new Exception("Error executing query --> $query <--: ".$exc->getMessage(), 500));
         }
-        return $result;
     }
 
     protected function fetchData($result) {
@@ -94,5 +100,13 @@ class SqlConnection extends AbstractSqlConnection implements IfDatabseConnection
         if ($this->dbConnection === null) {
             throw(new Exception('SqlConnection.checkConnection(): No connection established', 500));
         }
+    }
+
+    protected function getPlaceholders($data) {
+        $placeholders = [];
+        foreach(array_keys($data) as $key) {
+            $placeholders[$key] = ':'.$key;
+        }
+        return $placeholders;
     }
 }

@@ -14,7 +14,7 @@ class Permission extends DataEntity {
             ['name' => 'user', 'type' => 'varchar', 'notNoll' => true, 'length' => 32],
             ['name' => 'methods', 'type' => 'varchar', 'length' => 4],
             ['name' => 'entityName', 'type' => 'varchar', 'notNoll' => true, 'length' => 32],
-            ['name' => 'entityId', 'type' => 'varchar', 'notNoll' => true, 'length' => 16]
+            ['name' => 'entityId', 'type' => 'varchar', 'notNoll' => true, 'length' => 64]
         ]);
     }
 
@@ -34,6 +34,9 @@ class Permission extends DataEntity {
         $key = $event['subjectEntity']->uniqueKey();
         if ($event['context'] === 'onInsert') {
             $entityName = $event['subjectName'];
+            if (!$this->guard->permissionsNeeded($entityName)) {
+                return;
+            }
             $methods = '';
             if ($this->guard->userMay('read', $entityName)) {
                 $methods .= 'R';
@@ -45,20 +48,16 @@ class Permission extends DataEntity {
                 $methods .= 'D';
             }
             $key = Permission::toPermissionKey($event['user'], $event['subjectName'], $event['insertId']);
-            if ($event['context'] === 'onInsert') {
-                if ($key === null) {
-                    throw('A permission can only be issued for entities with one primary key.');
-                }
-                $this->dataModel->insert('permission', [
-                    'key' => $key,
-                    'user' => $event['user'],
-                    'methods' => $methods,
-                    'entityName' => $event['subjectName'],
-                    'entityId' => $event['insertId']
-                ]);
-            } elseif ($event['context'] === 'onDelete') {
-                $this->dataModel->delete('permission', [ 'filter' => [ 'key' => $key ] ]);
+            if ($key === null) {
+                throw('A permission can only be issued for entities with one primary key.');
             }
+            $this->dataModel->insert('permission', [
+                'key' => $key,
+                'user' => $event['user'],
+                'methods' => $methods,
+                'entityName' => $event['subjectName'],
+                'entityId' => $event['insertId']
+            ]);
         } elseif ($event['context'] === 'onDelete') {
             $entityName = $event['subjectName'];
             $keysToDelete = $this->protectedDataModel->read($entityName, [

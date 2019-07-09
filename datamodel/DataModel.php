@@ -3,7 +3,7 @@
 include_once __DIR__ . "/../FlexAPI.php";
 include_once __DIR__ . "/DataReferenceSet.php";
 include_once __DIR__ . "/../../bs-php-utils/Options.php";
-include_once __DIR__ . "/../accesscontrol/WorstGuardAtAll.php";
+include_once __DIR__ . "/../accesscontrol/VoidGuard.php";
 include_once __DIR__ . "/../../bs-php-utils/utils.php";
 
 class DataModel {
@@ -25,10 +25,12 @@ class DataModel {
                 'format' => 'key'   // options: 'data', 'keys', 'url'
             ],
             'flatten' => false,
-            'emptyResult' => null
+            'emptyResult' => null,
+            'sort' => [],
+            'pagination' => []
         ]);
         $this->references = new DataReferenceSet();
-        $this->setGuard(new WorstGuardAtAll());
+        $this->setGuard(new VoidGuard());
         $this->filterParser =  new FilterParser();
         $this->filterParser->dataModel = $this;
     }
@@ -69,6 +71,13 @@ class DataModel {
     public function addEntities($entities) {
         foreach ($entities as $entity) {
             $this->addEntity($entity);
+        }
+    }
+
+    public function reset() {
+        foreach ($this->entities as $entity) {
+            $this->connection->clearEntity($entity);
+            $this->connection->createEntity($entity);
         }
     }
 
@@ -198,6 +207,7 @@ class DataModel {
         $referenceConfig = $this->reshapeReferenceConfig($this->readOptions->valueOf('references'));
         $flatten = $this->readOptions->valueOf('flatten');
         $emptyResult = $this->readOptions->valueOf('emptyResult');
+        $sort = $this->reshapeSort($this->readOptions->valueOf('sort'));
         
         if (!$this->guard->userMay('read', $entityName)) {
             throw(new Exception("User is not allowed to read from '$entityName' specified by " . jsenc($filter) . ".", 403));
@@ -209,9 +219,9 @@ class DataModel {
             $regularSelection = $entity->fieldNames();
         }
         if ($this->guard->permissionsNeeded($entityName)) {
-            $data = $this->guard->readPermitted($this->connection, $entity, $filter, $regularSelection);
+            $data = $this->guard->readPermitted($this->connection, $entity, $filter, $regularSelection, $sort);
         } else {
-            $data = $this->connection->readFromDatabase($entity, $filter, $regularSelection);
+            $data = $this->connection->readFromDatabase($entity, $filter, $regularSelection, $sort);
         }
 
         $this->notifyObservers([
@@ -544,6 +554,18 @@ class DataModel {
             'added'   => $addedId
         ];
         return $output;
+    }
+
+    protected function reshapeSort($sort) {
+        if (is_string($sort)) {
+            $sort = [ ['by' => $sort, 'direction' => 'ascending'] ];
+        }
+        if (isAssoc($sort)) {
+            $sort = [$sort];
+        }
+        foreach ($sort as $sortItem) {
+            $sortItem = setFieldDefault($sortItem, 'direction', 'ascending');
+        }
     }
 
     protected function reshapeReferenceConfig($config) {

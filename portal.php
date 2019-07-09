@@ -3,79 +3,94 @@
 include_once __DIR__ . '/FlexAPI.php';
 include_once __DIR__ . '/requestutils/jwt.php';
 
-header("Access-Control-Allow-Origin: *");
-header('Content-Type: application/json');
-// header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
-
-$method = $_SERVER['REQUEST_METHOD'];
-
-if ($method === 'OPTIONS') {
-    echo "";
-    die;
-}
-
-try {
-    if ($method !== 'POST') {
-        throw(new Exception("Wrong method for portal. Must be POST", 400));
+function flexapiPortal() {
+    $method = $_SERVER['REQUEST_METHOD'];
+    
+    if ($method === 'OPTIONS') {
+        echo "";
+        die;
     }
+    
+    try {
+        $request = (array) json_decode(file_get_contents("php://input"));
+        $response = [];
+    
+        $methodOk = false;
+        if ($method === 'GET' && array_key_exists('verify', $_GET)) {
+            $request = [
+                'concern' => 'verify',
+                'token' => $_GET['verify']
+            ];
+            $methodOk = true;
+        } elseif ($method === 'POST') {
+            $methodOk = true;
+        }
+    
+        if (!$methodOk) {
+            throw(new Exception("Wrong method for portal.", 400));
+        }
+    
+        if ($request["concern"] === "login") {
+            $token = FlexAPI::guard()->login($request);
+            $response = [
+                "message" => "Login sucessfull",
+                "token" => $token,
+            ];
+        // TODO: add concern "verify (registration)"
+        } elseif ($request["concern"] === "logout") {
+            FlexAPI::guard()->logout(getJWT());
+            $response = ["message" => "Logout sucessfull"];
+    
+        } elseif ($request["concern"] === "register") {
+            FlexAPI::sendEvent([
+                'eventId' => 'before-user-registration',
+                'request' => $request
+            ]);
+    
+            $verificationData = FlexAPI::guard()->registerUser($request['username'], $request['password']);
+    
+            FlexAPI::sendEvent([
+                'eventId' => 'after-user-registration',
+                'request' => $request
+            ]);
+            $response = ["message" => "User was created."];
+            $response = array_merge($response, $verificationData);
+        } elseif ($request["concern"] === "unregister") {
+            FlexAPI::sendEvent([
+                'eventId' => 'before-user-unregistration',
+                'username' => $request['username']
+            ]);
+    
+            FlexAPI::guard()->unregisterUser($request['username'], $request['password']);
+    
+            FlexAPI::sendEvent([
+                'eventId' => 'after-user-unregistration',
+                'username' => $request['username']
+            ]);
+            $response = ["message" => "User was deleted."];
+        } elseif ($request['concern'] === 'verify') {
+            FlexAPI::guard()->verifyUser($request['token']);
+            $response = ["message" => "Account was verfified."];
 
-    $request = (array) json_decode(file_get_contents("php://input"));
+        } elseif ($request["concern"] === "publish") {
+            
+        } else {
+            throw(new Exception("Unknown concern ".$request['concern'].".", 401));
+        }
 
-    if ($request["concern"] === "login") {
-        $token = FlexAPI::guard()->login($request);
+        $response['code'] = 200;
+
+    } catch (Exception $exc) {
+        http_response_code($exc->getCode());
+        $msg = "Could not process ".$request['concern'].": " . $exc->getMessage();
         $response = [
-            "message" => "Login sucessfull",
-            "token" => $token,
+            'message' => $msg,
+            "code" => $exc->getCode()
         ];
-    // TODO: add concern "verify (registration)"
-    } elseif ($request["concern"] === "logout") {
-        FlexAPI::guard()->logout(getJWT());
-        $response = ["message" => "Logout sucessfull"];
-
-    } elseif ($request["concern"] === "register") {
-        FlexAPI::sendEvent([
-            'eventId' => 'before-user-registration',
-            'username' => $request['username']
-        ]);
-
-        FlexAPI::guard()->registerUser($request['username'], $request['password']);
-
-        FlexAPI::sendEvent([
-            'eventId' => 'after-user-registration',
-            'username' => $request['username']
-        ]);
-        $response = ["message" => "User was created."];
-    } elseif ($request["concern"] === "unregister") {
-        FlexAPI::sendEvent([
-            'eventId' => 'before-user-unregistration',
-            'username' => $request['username']
-        ]);
-
-        FlexAPI::guard()->unregisterUser($request['username'], $request['password']);
-
-        FlexAPI::sendEvent([
-            'eventId' => 'after-user-unregistration',
-            'username' => $request['username']
-        ]);
-        $response = ["message" => "User was deleted."];
-    } elseif ($request["concern"] === "publish") {
-        
-    } else {
-        throw(new Exception("Unknown concern ".$request['concern'].".", 401));
     }
-
-} catch (Exception $exc) {
-    http_response_code($exc->getCode());
-    $msg = "Could not process ".$request['concern'].": " . $exc->getMessage();
-    echo jsenc([
-        'message' => $msg,
-        "code" => $exc->getCode()
-    ]);
-    die;
+    
+    http_response_code($response['code']);
+    return $response;
 }
 
-http_response_code(200);
-$response['code'] = 200;
-echo jsenc($response);
 

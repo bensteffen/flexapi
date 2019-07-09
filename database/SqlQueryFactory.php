@@ -20,7 +20,11 @@ class SqlQueryFactory {
         );
     }
 
-    public static function makeSelectQuery($entity, $filter = [], $fieldSelection = [], $distinct = false) {
+    public static function makeDropQuery($entity) {
+        return sprintf("DROP TABLE IF EXISTS %s;", $entity->getName());
+    }
+
+    public static function makeSelectQuery($entity, $filter = [], $fieldSelection = [], $distinct = false, $order = [], $pagination = []) {
         if (count($fieldSelection) === 0) {
             $fieldSelection = $entity->fieldNames();
         }
@@ -28,14 +32,27 @@ class SqlQueryFactory {
         if ($distinct) {
             $select .= ' DISTINCT';
         }
-        return sprintf("%s %s FROM `%s` %s WHERE %s",
+        $orderQuery = '';
+        if (count($order) > 0) {
+            $map = ['ascending' => 'ASC', 'descending' => 'DESC'];
+            $orderFields = array_map(function($x) use($map) { return $x['by'].' '.$map[$x['direction']]; }, $order);
+            $orderQuery = sprintf(' ORDER BY %s', join(', ', $orderFields));
+        }
+        $paginationQuery = '';
+        if (count($pagination) > 0) {
+            $offset = ($pagination['page'] - 1)*$pagination['size'];
+            $paginationQuery = sprintf(' LIMIT %s OFFSET %s', $pagination['size'], $offset);
+        }
+        return sprintf("%s %s FROM `%s` %s WHERE %s%s%s",
             $select,
             Sql::Sequence($fieldSelection, function($f) use($entity) {
                 return Sql::Column($f, $entity->getName());
             })->toQuery(),
             $entity->getName(),
             SqlQueryFactory::makeReferencedTablesJoinQuery(array_merge($filter['references'])),
-            Sql::attachCreator($filter['tree'])->toQuery()
+            Sql::attachCreator($filter['tree'])->toQuery(),
+            $orderQuery,
+            $paginationQuery
         );
     }
 
@@ -102,18 +119,37 @@ class SqlQueryFactory {
             if (array_key_exists('length', $field)) {
                 $createString = sprintf("%s(%s)", $createString, $field['length']."");
             }
-            if ($field['notNull'] === true) {
-                $createString = sprintf("%s %s", $createString, "NOT NULL");
-            }
-            if (array_key_exists('default', $field)) {
-                $createString = sprintf("%s %s %s", $createString, "DEFAULT", jsenc($field['default']));
-            }
             if (array_key_exists('autoIncrement', $field) && $field['autoIncrement'] === true) {
                 $createString = sprintf("%s %s", $createString, "AUTO_INCREMENT");
+            } else {
+                if ($field['notNull'] === true) {
+                    $createString = sprintf("%s %s", $createString, "NOT NULL");
+                }
+                if ($field['notNull'] === true || array_key_exists('default', $field)) {
+                    $default = SqlQueryFactory::getDefaultValue($field);
+                    $createString = sprintf("%s %s %s", $createString, "DEFAULT", jsenc($default));
+                }
             }
             array_push($createStrings, $createString);
         }
         return implode(", ",$createStrings);
+    }
+
+    protected static function getDefaultValue($field) {
+        if (array_key_exists('default', $field)) {
+            return $field['default'];
+        }
+        switch ($field['type']) {
+            case 'varchar':
+            case 'text':
+                return '';
+            case 'int':
+            case 'decimal':
+                return 0;
+            case 'boolean':
+            case 'bool':
+                return false;
+        }
     }
 
     protected static function makeReferencedTablesJoinQuery($references) {
