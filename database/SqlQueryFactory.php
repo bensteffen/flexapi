@@ -34,9 +34,7 @@ class SqlQueryFactory {
         }
         $orderQuery = '';
         if (count($order) > 0) {
-            $map = ['ascending' => 'ASC', 'descending' => 'DESC'];
-            $orderFields = array_map(function($x) use($map) { return $x['by'].' '.$map[$x['direction']]; }, $order);
-            $orderQuery = sprintf(' ORDER BY %s', join(', ', $orderFields));
+            $orderQuery = ' '.Sql::Order($order)->toQuery();
         }
         $paginationQuery = '';
         if (count($pagination) > 0) {

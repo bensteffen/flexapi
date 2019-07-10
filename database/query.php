@@ -23,6 +23,9 @@ interface QueryCreator {
     function makeOr($orElement);
     function makeNot($notElement);
     function makeGroup($groupElement);
+    function makeOrderDirection($orderDirectionElement);
+    function makeOrderItem($orderItemElement);
+    function makeOrder($orderElement);
     function makeVoid($voidElement);
 }
 
@@ -176,3 +179,48 @@ class QuerySequence extends QueryElement {
     }
 }
 
+class QueryOrderDirection extends QueryElement {
+    public $direction;
+
+    public function __construct($direction) {
+        if ($direction) {
+            $this->direction = $direction;
+        }
+    }
+
+    public function toQuery() {
+        $this->setCreator($this->creator);
+        return $this->creator->makeOrderDirection($this);
+    }
+}
+
+class QueryOrderItem extends QueryElement {
+    public $column;
+    public $direction;
+
+    public function __construct($column, $direction) {
+        $this->column = $column;
+        $this->direction = $direction;
+    }
+
+    public function toQuery() {
+        $this->column->setCreator($this->creator);
+        $this->direction->setCreator($this->creator);
+        return $this->creator->makeOrderItem($this);
+    }
+}
+
+class QueryOrder extends QueryElement {
+    public $items;
+
+    public function __construct($items) {
+        if ($items) {
+            $this->items = $items;
+        }
+    }
+
+    public function toQuery() {
+        $this->items->setCreator($this->creator);
+        return $this->creator->makeOrder($this);
+    }
+}

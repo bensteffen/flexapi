@@ -75,6 +75,18 @@ function parseUrlParameters($queries) {
     }
     $refs = setFieldDefault($refs, 'format', 'url');
 
+    $sort = [];
+    if (array_key_exists('sort', $queries)) {
+        $values = parseParameterValue($queries['sort']);
+        foreach($values as $value) {
+            $sortItem = ['by' => $value[0]];
+            if (count($value) === 2) {
+                $sortItem['direction'] = $value[1];
+            }
+            array_push($sort, $sortItem);
+        }
+    }
+
     $flatten = false;
     if (array_key_exists('flatten', $queries)) {
         if ($queries['flatten'] === 'singleResult' || $queries['flatten'] === 'singleField') {
@@ -88,7 +100,8 @@ function parseUrlParameters($queries) {
         'filter'  => $filter,
         'select'  => $select,
         'refs'    => $refs,
-        'flatten' => $flatten
+        'flatten' => $flatten,
+        'sort'    => $sort
     ];
 }
 
@@ -109,3 +122,18 @@ function getReferenceParameters($query) {
     return $refParameters;
 }
 
+
+function parseParameterValue($queryStr) {
+    preg_match_all("/(\([\w]+(,[\w]+)*?\))+/", $queryStr, $result);
+    if (!$result) {
+        return null;
+    }
+    $values = [];
+    $result = $result[0][0];
+    $result = explode(')(', $result);
+    foreach($result as $resultItem) {
+        $resultItem = explode(",", preg_replace("/\(|\)/", "", $resultItem));
+        array_push($values, $resultItem);
+    }
+    return $values;
+}

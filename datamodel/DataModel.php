@@ -221,7 +221,7 @@ class DataModel {
         if ($this->guard->permissionsNeeded($entityName)) {
             $data = $this->guard->readPermitted($this->connection, $entity, $filter, $regularSelection, $sort);
         } else {
-            $data = $this->connection->readFromDatabase($entity, $filter, $regularSelection, $sort);
+            $data = $this->connection->readFromDatabase($entity, $filter, $regularSelection, true, $sort);
         }
 
         $this->notifyObservers([
@@ -563,9 +563,10 @@ class DataModel {
         if (isAssoc($sort)) {
             $sort = [$sort];
         }
-        foreach ($sort as $sortItem) {
-            $sortItem = setFieldDefault($sortItem, 'direction', 'ascending');
+        foreach ($sort as $i => $sortItem) {
+            $sort[$i] = setFieldDefault($sortItem, 'direction', 'ascending');
         }
+        return $sort;
     }
 
     protected function reshapeReferenceConfig($config) {

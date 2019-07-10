@@ -39,7 +39,7 @@ abstract class Guard {
 
     public abstract function permissionsNeeded($entityName);
 
-    public abstract function readPermitted($connection, $entity, $filter, $selection);
+    public abstract function readPermitted($connection, $entity, $filter, $selection, $sort);
 
     public abstract function updatePermitted($connection, $entity, $filter, $data);
 

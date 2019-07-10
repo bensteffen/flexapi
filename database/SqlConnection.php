@@ -50,7 +50,7 @@ class SqlConnection extends AbstractSqlConnection implements IfDatabseConnection
         return $this->dbConnection->insert_id;
     }
 
-    public function readFromDatabase($entity, $filter, $fieldSelection, $entityReferences = [], $distinct = true, $order = [], $pagination = []) {
+    public function readFromDatabase($entity, $filter, $fieldSelection, $distinct = true, $order = [], $pagination = []) {
         $this->checkConnection();
         $selectQuery = SqlQueryFactory::makeSelectQuery($entity, $filter, $fieldSelection, $distinct, $order, $pagination);
         // echo "<br>select query: $selectQuery<br>";

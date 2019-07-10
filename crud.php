@@ -30,7 +30,8 @@ function flexapiCrud() {
                     'filter'     => $parameters['filter'],
                     'references' => $parameters['refs'],
                     'selection'  => $parameters['select'],
-                    'flatten'    => $parameters['flatten']
+                    'flatten'    => $parameters['flatten'],
+                    'sort'       => $parameters['sort']
                 ]);
                 break;
             case 'POST':

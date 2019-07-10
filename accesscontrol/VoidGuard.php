@@ -23,9 +23,10 @@ class VoidGuard extends Guard {
         return false;
     }
 
-    public function readPermitted($connection, $entity, $filter, $selection) {
+    public function readPermitted($connection, $entity, $filter, $selection, $sort) {
         return null;
     }
+	
 
     public function updatePermitted($connection, $entity, $filter, $data) {
 

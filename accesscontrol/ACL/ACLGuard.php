@@ -239,9 +239,9 @@ class ACLGuard extends Guard {
         return $this->crudPermissions[$entityName]['permissionNeeded'];
     }
 
-    public function readPermitted($connection, $entity, $filter, $selection, $onlyOwn = false) {
+    public function readPermitted($connection, $entity, $filter, $selection, $sort, $onlyOwn = false) {
         $filter = $this->addPermissionFilter('R', $entity, $filter, $onlyOwn);
-        return $connection->readFromDataBase($entity, $filter, $selection, true);
+        return $connection->readFromDataBase($entity, $filter, $selection, true, $sort);
     }
 
     public function updatePermitted($connection, $entity, $filter, $data) {
