@@ -26,6 +26,7 @@ interface QueryCreator {
     function makeOrderDirection($orderDirectionElement);
     function makeOrderItem($orderItemElement);
     function makeOrder($orderElement);
+    function makePagination($paginationElement);
     function makeVoid($voidElement);
 }
 
@@ -222,5 +223,19 @@ class QueryOrder extends QueryElement {
     public function toQuery() {
         $this->items->setCreator($this->creator);
         return $this->creator->makeOrder($this);
+    }
+}
+
+class QueryPagination extends QueryElement {
+    public $size;
+    public $offset;
+
+    public function __construct($size, $offset) {
+        $this->size = $size;
+        $this->offset = $offset;
+    }
+
+    public function toQuery() {
+        return $this->creator->makePagination($this);
     }
 }

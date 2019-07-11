@@ -88,7 +88,11 @@ class SqlCreator implements QueryCreator {
     }
 
     public function makeOrder($order) {
-        return sprintf("ORDER BY %s", $order->items->toQuery());
+        return sprintf('ORDER BY %s', $order->items->toQuery());
+    }
+
+    public function makePagination($pagination) {
+        return sprintf('LIMIT %s OFFSET %s', $pagination->size, $pagination->offset);
     }
 
     public function makeVoid($void) {
@@ -158,6 +162,10 @@ class Sql {
             return new QueryOrderItem($column, $direction);
         }, $items);
         return Sql::attachCreator(new QueryOrder(new QuerySequence($items)));
+    }
+
+    public static function Pagination($pagination) {
+        return Sql::attachCreator(new QueryPagination($pagination['size'], $pagination['offset']));
     }
 
     // public static function ConditionSequence($items, $converter = null) {

@@ -41,7 +41,7 @@ function parseAssocString($str) {
         $assocArray = [];
         foreach($pairs as $pair) {
             $pairArray = parseArrayString("[$pair]");
-            $assocArray[$pairArray[0]] = $pairArray[1];
+            $assocArray[$pairArray[0]] = json_decode($pairArray[1], JSON_NUMERIC_CHECK);
         }
         return $assocArray;
     }
@@ -87,6 +87,11 @@ function parseUrlParameters($queries) {
         }
     }
 
+    $pages = [];
+    if (array_key_exists('pages', $queries)) {
+        $pages = pairs2assoc(parseParameterValue($queries['pages']));
+    }
+
     $flatten = false;
     if (array_key_exists('flatten', $queries)) {
         if ($queries['flatten'] === 'singleResult' || $queries['flatten'] === 'singleField') {
@@ -101,7 +106,8 @@ function parseUrlParameters($queries) {
         'select'  => $select,
         'refs'    => $refs,
         'flatten' => $flatten,
-        'sort'    => $sort
+        'sort'    => $sort,
+        'pages'   => $pages
     ];
 }
 
@@ -136,4 +142,14 @@ function parseParameterValue($queryStr) {
         array_push($values, $resultItem);
     }
     return $values;
+}
+
+function pairs2assoc($pairs) {
+    $assoc = [];
+    foreach($pairs as $pair) {
+        if (count($pair > 1)) {
+            $assoc[$pair[0]] = json_decode($pair[1], JSON_NUMERIC_CHECK);
+        }
+    }
+    return $assoc;
 }

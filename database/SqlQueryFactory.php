@@ -38,8 +38,7 @@ class SqlQueryFactory {
         }
         $paginationQuery = '';
         if (count($pagination) > 0) {
-            $offset = ($pagination['page'] - 1)*$pagination['size'];
-            $paginationQuery = sprintf(' LIMIT %s OFFSET %s', $pagination['size'], $offset);
+            $paginationQuery = ' '.Sql::Pagination($pagination)->toQuery();
         }
         return sprintf("%s %s FROM `%s` %s WHERE %s%s%s",
             $select,

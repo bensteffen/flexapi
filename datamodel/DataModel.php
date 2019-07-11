@@ -208,6 +208,7 @@ class DataModel {
         $flatten = $this->readOptions->valueOf('flatten');
         $emptyResult = $this->readOptions->valueOf('emptyResult');
         $sort = $this->reshapeSort($this->readOptions->valueOf('sort'));
+        $pagination = $this->reshapePagination($this->readOptions->valueOf('pagination'));
         
         if (!$this->guard->userMay('read', $entityName)) {
             throw(new Exception("User is not allowed to read from '$entityName' specified by " . jsenc($filter) . ".", 403));
@@ -221,7 +222,7 @@ class DataModel {
         if ($this->guard->permissionsNeeded($entityName)) {
             $data = $this->guard->readPermitted($this->connection, $entity, $filter, $regularSelection, $sort);
         } else {
-            $data = $this->connection->readFromDatabase($entity, $filter, $regularSelection, true, $sort);
+            $data = $this->connection->readFromDatabase($entity, $filter, $regularSelection, true, $sort, $pagination);
         }
 
         $this->notifyObservers([
@@ -567,6 +568,13 @@ class DataModel {
             $sort[$i] = setFieldDefault($sortItem, 'direction', 'ascending');
         }
         return $sort;
+    }
+
+    protected function reshapePagination($pagination) {
+        if (count($pagination) > 0) {
+            $pagination['offset'] = ($pagination['page'] - 1)*$pagination['size'];
+        }
+        return $pagination;
     }
 
     protected function reshapeReferenceConfig($config) {
