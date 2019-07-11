@@ -3,10 +3,11 @@
 include_once __DIR__ . "/IfDatabseConnection.php";
 include_once __DIR__ . "/AbstractSqlConnection.php";
 include_once __DIR__ . "/SqlQueryFactory.php";
-include_once __DIR__ . '/../../bs-php-utils/utils.php';
+include_once __DIR__ . '/../../../bensteffen/bs-php-utils/utils.php';
 
 class SqlConnection extends AbstractSqlConnection implements IfDatabseConnection {
     private $dbConnection = null;
+    private $dbDatabase = null;
 
     public function __construct($credentials) {
         if ($credentials) {
@@ -16,6 +17,8 @@ class SqlConnection extends AbstractSqlConnection implements IfDatabseConnection
 
     public function establish($credentials) {
         if (!$this->dbConnection) {
+            $this->dbDatabase = $credentials['database'];
+
             $this->dbConnection = new mysqli(
                 $credentials['host'],
                 $credentials['username'],
@@ -35,13 +38,11 @@ class SqlConnection extends AbstractSqlConnection implements IfDatabseConnection
     }
 
     protected function fetchData($result) {
-        if ($result && $result->num_rows > 0) {
-            $output = [];
+        $output = [];
+        if ($result) {
             while($row = $result->fetch_assoc()) {
                 array_push($output,$row);
             }
-        } else {
-            $output = [];
         }
         return $output;
     }
@@ -53,6 +54,10 @@ class SqlConnection extends AbstractSqlConnection implements IfDatabseConnection
     protected function checkConnection() {
         if ($this->dbConnection === null) {
             throw(new Exception('SqlConnection.checkConnection(): No connection established', 500));
+        }
+
+        if ($this->dbConnection->connect_errno) {
+            throw(new Exception('SqlConnection.checkConnection(): Failed to connect', 500));
         }
     }
 }

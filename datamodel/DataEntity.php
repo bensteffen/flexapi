@@ -1,13 +1,13 @@
 <?php
 
-include_once __DIR__ . '/../../bs-php-utils/utils.php';
+include_once __DIR__ . '/../../../bensteffen/bs-php-utils/utils.php';
 
 
 class DataEntity {
     protected $name;
     protected $fieldSet;
     protected $dataModel = null;
-    
+
     public function __construct($name) {
         $this->name = $name;
         $this->fieldSet = [];
@@ -35,11 +35,11 @@ class DataEntity {
             $this->dataModel = $dataModel;
         }
     }
-    
+
     public function getName() {
         return $this->name;
     }
-    
+
     public function getFieldSet() {
         return $this->fieldSet;
     }

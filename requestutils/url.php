@@ -1,6 +1,6 @@
 <?php
 
-include_once __DIR__ . "/../../bs-php-utils/utils.php";
+include_once __DIR__ . "/../../../bensteffen/bs-php-utils/utils.php";
 
 function parseArrayString($str) {
     if (preg_match("/^\[.*\]$/", $str)) {
@@ -114,7 +114,7 @@ function parseUrlParameters($queries) {
 // function getSelectParameter($query) {
 //     $select = [];
 
-//     preg_match_all("/(and|or)?\([\w\s\-_]+,[\w\s\-_]+,?[\w\s\-_]*\)/", $query, $selectQuery);  
+//     preg_match_all("/(and|or)?\([\w\s\-_]+,[\w\s\-_]+,?[\w\s\-_]*\)/", $query, $selectQuery);
 // }
 
 function getReferenceParameters($query) {

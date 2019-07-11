@@ -33,7 +33,7 @@ class VoidGuard extends Guard {
     }
 
     public function deletePermitted($connection, $entity, $filter) {
-        
+
     }
 
     public function publish($rootEntityName, $filter, $accessLevel, $guestPassword) {
@@ -49,7 +49,7 @@ class VoidGuard extends Guard {
     }
 
     protected function onNewEntity($entityName) {
-        
+
     }
 }
 

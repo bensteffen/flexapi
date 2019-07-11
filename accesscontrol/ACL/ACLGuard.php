@@ -7,8 +7,8 @@ include_once __DIR__ . '/RoleAssignment.php';
 include_once __DIR__ . '/CrudPermission.php';
 include_once __DIR__ . '/Permission.php';
 include_once __DIR__ . '/JwtBlackList.php';
-include_once __DIR__ . '/../../../bs-php-utils/utils.php';
 include_once __DIR__ . '/../../services/jwt/FirebaseJwtService.php';
+include_once __DIR__ . '/../../../../bensteffen/bs-php-utils/utils.php';
 
 class ACLGuard extends Guard {
     protected $acModel;
@@ -134,7 +134,7 @@ class ACLGuard extends Guard {
 
     public function logout($jwt) {
         $token = $this->decodeJWT($jwt);
-        $payload = (array) $token['data']; 
+        $payload = (array) $token['data'];
         $this->acModel->insert('jwtblacklist',[
             'jwt' => $jwt,
             'expire' => $payload['expire']
@@ -338,7 +338,7 @@ class ACLGuard extends Guard {
             'entityId' => $entityId
         ]);
     }
-    
+
 
     protected function getUserAccesLevel() {
         return $this->userAccessLevel;
