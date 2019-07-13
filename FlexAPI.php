@@ -9,6 +9,7 @@ use PHPMailer\PHPMailer\Exception;
 class FlexAPI {
     protected static $apiDefinition = null;
     protected static $apiSettings = null;
+    public static $env = null;
     protected static $setupCallback = null;
     protected static $callbackRegister = [];
 
@@ -68,15 +69,19 @@ class FlexAPI {
         return FlexAPI::$apiDefinition['guard'];
     }
 
-    public static function setConfig($configName) {
-        // $config = (array) json_decode(file_get_contents(__DIR__."/../../../$configName.conf.json"), true);
-        $config = include('api.config.php');
-        // if (!array_key_exists('environment', $config)) {
-        //     throw(new Exception('FlexAPI-Congiguration must contain entry "environment".', 400));
-        // }
-        // $environmentName = $config['environment'];
-        // $environment = (array) json_decode(file_get_contents(__DIR__."/../../../$environmentName.env.json"), true);
-        // FlexAPI::$apiSettings = array_merge($config, $environment);
+    public static function config($configName = null) {
+        if (!$configName) {
+            $config = include(__DIR__."/../../../api.conf.php");
+        } else {
+            $config = include(__DIR__."/../../../$configName.conf.php");
+        }
+
+        $envFileName = __DIR__."/../../../api.env.php";
+        $env = 'prod';
+        if (is_file($envFileName)) {
+            $env = include($envFileName);
+        }
+        FlexAPI::$env = $env;
         FlexAPI::$apiSettings = $config;
     }
 
@@ -125,7 +130,7 @@ class FlexAPI {
         $settings = FlexAPI::get('mailing');
         
         $mail = new PHPMailer(true);
-        $mail->SMTPDebug = 2;            // Enable verbose debug output
+        // $mail->SMTPDebug = 2;            // Enable verbose debug output
         $mail->isSMTP();
         $mail->Host = $settings['smtp']['host'];
         $mail->Port = $settings['smtp']['port'];
