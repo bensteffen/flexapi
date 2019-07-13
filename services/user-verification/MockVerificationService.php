@@ -14,7 +14,7 @@ class MockVerificationService implements IfVerficationService {
         $this->validityDuration = $settings['validityDuration'];
         if (!$jwtService) {
             $jwtService = new FirebaseJwtService(
-                $settings['jwtSecret'],
+                FlexAPI::get('jwtSecret'),
                 $this->validityDuration
             );
         }
