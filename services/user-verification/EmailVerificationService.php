@@ -17,7 +17,7 @@ class EmailVerificationService implements IfVerficationService {
         $this->validityDuration = $settings['validityDuration'];
         if (!$jwtService) {
             $jwtService = new FirebaseJwtService(
-                $settings['jwtSecret'],
+                FlexAPI::get('jwtSecret'),
                 $this->validityDuration
             );
         }
@@ -30,10 +30,15 @@ class EmailVerificationService implements IfVerficationService {
     }
 
     public function startVerification($data) {
+        $forwardTo = null;
+        $settings = FlexAPI::get('userVerification');
+        if (array_key_exists('forwardTo', $settings)) {
+            $forwardTo = $settings['forwardTo'];
+        }
         $token = $this->jwtService->encode([ 'payload' => [
             'username' => $data['username'],
             'address' => $data['address'],
-            'forwardTo' => $data['forwardTo']
+            'forwardTo' => $forwardTo
         ]]);
         $this->acModel->insert('userverification', [
             'expires' => time() + $this->validityDuration,
