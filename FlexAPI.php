@@ -69,13 +69,15 @@ class FlexAPI {
     }
 
     public static function setConfig($configName) {
-        $config = (array) json_decode(file_get_contents(__DIR__."/../../../$configName.conf.json"), true);
-        if (!array_key_exists('environment', $config)) {
-            throw(new Exception('FlexAPI-Congiguration must contain entry "environment".', 400));
-        }
-        $environmentName = $config['environment'];
-        $environment = (array) json_decode(file_get_contents(__DIR__."/../../../$environmentName.env.json"), true);
-        FlexAPI::$apiSettings = array_merge($config, $environment);
+        // $config = (array) json_decode(file_get_contents(__DIR__."/../../../$configName.conf.json"), true);
+        $config = include('api.config.php');
+        // if (!array_key_exists('environment', $config)) {
+        //     throw(new Exception('FlexAPI-Congiguration must contain entry "environment".', 400));
+        // }
+        // $environmentName = $config['environment'];
+        // $environment = (array) json_decode(file_get_contents(__DIR__."/../../../$environmentName.env.json"), true);
+        // FlexAPI::$apiSettings = array_merge($config, $environment);
+        FlexAPI::$apiSettings = $config;
     }
 
     public static function set($name, $value) {
