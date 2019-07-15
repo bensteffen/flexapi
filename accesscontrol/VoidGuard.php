@@ -2,7 +2,7 @@
 
 include_once __DIR__ . '/Guard.php';
 
-class WorstGuardAtAll extends Guard {
+class VoidGuard extends Guard {
     public function login($authentification) {
 
     }
@@ -23,9 +23,10 @@ class WorstGuardAtAll extends Guard {
         return false;
     }
 
-    public function readPermitted($connection, $entity, $filter, $selection) {
+    public function readPermitted($connection, $entity, $filter, $selection, $sort) {
         return null;
     }
+	
 
     public function updatePermitted($connection, $entity, $filter, $data) {
 

@@ -2,12 +2,12 @@
 
 include_once __DIR__ . '/../Guard.php';
 include_once __DIR__ . '/../../datamodel/DataModel.php';
-include_once __DIR__ . '/../../database/FilterParser.php';
 include_once __DIR__ . '/User.php';
 include_once __DIR__ . '/RoleAssignment.php';
 include_once __DIR__ . '/CrudPermission.php';
 include_once __DIR__ . '/Permission.php';
 include_once __DIR__ . '/JwtBlackList.php';
+include_once __DIR__ . '/../../services/jwt/FirebaseJwtService.php';
 include_once __DIR__ . '/../../../../bensteffen/bs-php-utils/utils.php';
 
 class ACLGuard extends Guard {
@@ -16,7 +16,7 @@ class ACLGuard extends Guard {
     protected $userRoles;
     protected $crudPermissions;
 
-    public function __construct($connection) {
+    public function __construct($connection, $jwtService = null, $verificationService = null) {
         $this->permission = new Permission();
         $this->permission->setGuard($this);
 
@@ -27,17 +27,60 @@ class ACLGuard extends Guard {
         $this->acModel->addEntity(new JwtBlackList());
         $this->acModel->addEntity(new RoleAssignment());
         $this->acModel->addEntity(new CrudPermission());
+
+        if (!$jwtService) {
+            $jwtService = new FirebaseJwtService(
+                FlexAPI::get('jwtSecret'),
+                FlexAPI::get('jwtValidityDuration')
+            );
+        }
+        $this->jwtService = $jwtService;
+
+        $this->verificationService = $verificationService;
+        if ($this->verificationService) {
+            $this->verificationService->setDataModel($this->acModel);
+        }
     }
 
-    public function registerUser($username, $password) {
+    public function reset() {
+        $this->acModel->reset();
+    }
+
+    public function registerUser($username, $password, $verificationEnabled = null) {
         $userExists = $this->acModel->read('user', ['filter' => ['name' => $username]]);
         if ($userExists) {
             throw(new Exception("User with name '$username' already exists.", 400));
         }
+
+        if ($verificationEnabled === null) {
+            $verification = FlexAPI::get('userVerification');
+            $verificationEnabled = $verification['enabled'];
+        }
+
+        $verificationData = [];
+        if ($verificationEnabled) {
+            $verificationData = $this->verificationService->startVerification([
+                'username' => $username,
+                'address' => $username
+            ]);
+        }
+
         $this->acModel->insert('user', [
             'name' => $username,
-            'password' => password_hash($password, PASSWORD_DEFAULT)
+            'password' => password_hash($password, PASSWORD_DEFAULT),
+            'isVerified' => !$verificationEnabled
         ]);
+
+        return $verificationData;
+    }
+
+    public function verifyUser($token) {
+        $responseData = $this->verificationService->finishVerification([ 'token' => $token ]);
+        FlexAPI::sendEvent([
+            'eventId' => 'after-user-verification',
+            'response' => $responseData
+        ]);
+        return $responseData;
     }
 
     public function unregisterUser($username, $password) {
@@ -50,6 +93,7 @@ class ACLGuard extends Guard {
             $this->withdrawRole($role, $this->username);
         }
         $this->acModel->delete('user', ['name' => $this->username]);
+        $this->acModel->delete('permission', ['user' => $this->username]);
     }
 
     public function login($auth /*username and password OR JWT*/) {
@@ -59,22 +103,29 @@ class ACLGuard extends Guard {
                 'filter' => [ 'name' => $auth['username'] ],
                 'flatten' => 'singleResult'
             ]);
+            if (!$result['isVerified']) {
+                throw(new Exception("Account is not verified, yet.", 401));
+            }
             if (!password_verify($auth['password'], $result['password'])) {
                 throw(new Exception("Bad user name or password.", 401));
             }
             $this->username = $result['name'];
             $this->crudPermissions = $this->getCrudPermissions();
 
-            return $this->createJWT();
+            return $this->jwtService->encode(['payload' => ['username' => $this->username] ]);
         } else {
             $jwtInBlacklist = $this->acModel->read('jwtblacklist', ['filter' => ['jwt' => $auth]]);
             if ($jwtInBlacklist) {
                 throw(new Exception("Authentication not valid anymore.", 401));
             }
-            $token = $this->decodeJWT($auth);
-            $payload = (array) $token['data'];
-
-            $this->username = $payload['user'];
+            try {
+                $decoded = $this->jwtService->decode($auth);
+            } catch (Exception $exc) {
+                throw(new Exception("Invalid authentication: ".$exc->getMessage(), 401));
+            }
+            $payload = (array) $decoded['data']; 
+            
+            $this->username = $payload['username'];
             $this->crudPermissions = $this->getCrudPermissions();
 
             return $auth;
@@ -131,7 +182,8 @@ class ACLGuard extends Guard {
         $userRoles = $this->getUserRoles();
         foreach($userRoles as $role) {
             $pemissionForRole = $this->acModel->read('crudpermission', [
-                'filter' => ['role' => $role]
+                'filter' => ['role' => $role],
+                'emptyResult' => []
             ]);
             foreach($pemissionForRole as $p) {
                 foreach(['create', 'read', 'update', 'delete'] as $method) {
@@ -187,9 +239,9 @@ class ACLGuard extends Guard {
         return $this->crudPermissions[$entityName]['permissionNeeded'];
     }
 
-    public function readPermitted($connection, $entity, $filter, $selection, $onlyOwn = false) {
+    public function readPermitted($connection, $entity, $filter, $selection, $sort, $onlyOwn = false) {
         $filter = $this->addPermissionFilter('R', $entity, $filter, $onlyOwn);
-        return $connection->readFromDataBase($entity, $filter, $selection, true);
+        return $connection->readFromDataBase($entity, $filter, $selection, true, $sort);
     }
 
     public function updatePermitted($connection, $entity, $filter, $data) {
@@ -253,8 +305,6 @@ class ACLGuard extends Guard {
             }
         }
 
-        $userRoles = $this->getUserRoles();
-
         $entityEq = new QueryCondition(
             new QueryColumn('entityName', 'permission', null, ['ACL' => $permissionRef ]),
             new QueryValue($entityName)
@@ -263,13 +313,13 @@ class ACLGuard extends Guard {
             new QueryColumn('entityId', 'permission', null, ['ACL' => $permissionRef ]),
             new QueryColumn($keyName, $entityName)
         );
-        $accessLevelCheck = new QueryCondition(
+        $methodCheck = new QueryCondition(
             new QueryColumn('methods', 'permission', null, ['ACL' => $permissionRef ]),
             new QueryValue($method),
-            'con' // >=
+            'con'
         );
 
-        $permissionRef[0]['referenceCondition'] = new QueryAnd(new QueryAnd(new QueryAnd($userCheck, $entityEq), $keyEq), $accessLevelCheck);
+        $permissionRef[0]['referenceCondition'] = new QueryAnd(new QueryAnd(new QueryAnd($userCheck, $entityEq), $keyEq), $methodCheck);
         $filter['references']['ACL'] = $permissionRef;
 
         return $filter;

@@ -2,6 +2,7 @@
 
 include_once __DIR__ . '/../../../bensteffen/bs-php-utils/utils.php';
 
+
 class DataEntity {
     protected $name;
     protected $fieldSet;
@@ -53,6 +54,11 @@ class DataEntity {
             return $pKeys[0];
         }
         return null;
+    }
+
+    public function uniqueFilter($keyValue) {
+        $keyName = $this->uniqueKey();
+        return [$keyName => $keyValue];
     }
 
     public function primaryKeys() {

@@ -7,13 +7,13 @@ interface IfDatabseConnection {
 
     public function insertIntoDatabase($entity, $data);
 
-    public function readFromDatabase($entity, $filter, $fieldSelection, $distinct);
+    public function readFromDatabase($entity, $filter, $fieldSelection, $distinct, $order, $pagination);
 
     public function updateDatabase($entity, $data);
 
     public function deleteFromDatabase($entity, $filter);
 
-    public function joinTables($type, $baseEntity, $joinedEntity, $joinConditions, $selection, $filter);
+    public function clearEntity($entity);
 
     function prepareData($entity, $data);
 

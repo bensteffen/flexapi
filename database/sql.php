@@ -3,7 +3,6 @@
 include_once __DIR__ . '/../../../bensteffen/bs-php-utils/utils.php';
 include_once __DIR__ . '/query.php';
 
-
 class SqlCreator implements QueryCreator {
     public $useTics = true;
 
@@ -79,6 +78,23 @@ class SqlCreator implements QueryCreator {
         return sprintf("(%s)", $group->item->toQuery());
     }
 
+    function makeOrderDirection($orderDirectionElement) {
+        $map = ['ascending' => 'ASC', 'descending' => 'DESC'];
+        return $map[$orderDirectionElement->direction];
+    }
+
+    function makeOrderItem($orderItemElement) {
+        return sprintf('%s %s', $orderItemElement->column->toQuery(), $orderItemElement->direction->toQuery());
+    }
+
+    public function makeOrder($order) {
+        return sprintf('ORDER BY %s', $order->items->toQuery());
+    }
+
+    public function makePagination($pagination) {
+        return sprintf('LIMIT %s OFFSET %s', $pagination->size, $pagination->offset);
+    }
+
     public function makeVoid($void) {
         return sprintf("1");
     }
@@ -137,6 +153,19 @@ class Sql {
 
     public static function Group($item) {
         return Sql::attachCreator(new QueryGroup($item));
+    }
+
+    public static function Order($items) {
+        $items = array_map(function($item) {
+            $column = new QueryColumn($item['by']);
+            $direction = new QueryOrderDirection($item['direction']);
+            return new QueryOrderItem($column, $direction);
+        }, $items);
+        return Sql::attachCreator(new QueryOrder(new QuerySequence($items)));
+    }
+
+    public static function Pagination($pagination) {
+        return Sql::attachCreator(new QueryPagination($pagination['size'], $pagination['offset']));
     }
 
     // public static function ConditionSequence($items, $converter = null) {

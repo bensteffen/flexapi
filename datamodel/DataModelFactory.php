@@ -4,18 +4,19 @@ abstract class DataModelFactory {
     protected $databaseConnection;
     protected $guard;
 
-    public function createDataModel() {
+    public function createDataModel($databaseConnection, $guard) {
+        $this->databaseConnection = $databaseConnection;
+        $this->guard = $guard;
         $model = $this->buildDataModel();
-        $model->setConnection($this->databaseConnection);
-        $model->setGuard($this->guard);
+        $model->setConnection($databaseConnection);
+        $model->setGuard($guard);
         return $model;
     }
 
-    function __construct($databaseConnection = null, $guard = null) {
+    public function __construct($databaseConnection = null, $guard = null) {
         $this->databaseConnection = $databaseConnection;
         $this->guard = $guard;
     }
 
     public abstract function buildDataModel();
 }
-

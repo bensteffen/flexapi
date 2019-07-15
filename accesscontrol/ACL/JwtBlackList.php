@@ -13,7 +13,7 @@ class JwtBlackList extends DataEntity {
             ['name' => 'jwt', 'type' => 'varchar', 'length' => 512, 'notNoll' => true]
         );
         $this->addField(
-            ['name' => 'expire', 'type' => 'timestamp', 'notNoll' => true]
+            ['name' => 'expire', 'type' => 'int', 'notNoll' => true]
         );
     }
 }

@@ -41,7 +41,7 @@ function parseAssocString($str) {
         $assocArray = [];
         foreach($pairs as $pair) {
             $pairArray = parseArrayString("[$pair]");
-            $assocArray[$pairArray[0]] = $pairArray[1];
+            $assocArray[$pairArray[0]] = json_decode($pairArray[1], JSON_NUMERIC_CHECK);
         }
         return $assocArray;
     }
@@ -75,6 +75,23 @@ function parseUrlParameters($queries) {
     }
     $refs = setFieldDefault($refs, 'format', 'url');
 
+    $sort = [];
+    if (array_key_exists('sort', $queries)) {
+        $values = parseParameterValue($queries['sort']);
+        foreach($values as $value) {
+            $sortItem = ['by' => $value[0]];
+            if (count($value) === 2) {
+                $sortItem['direction'] = $value[1];
+            }
+            array_push($sort, $sortItem);
+        }
+    }
+
+    $pages = [];
+    if (array_key_exists('pages', $queries)) {
+        $pages = pairs2assoc(parseParameterValue($queries['pages']));
+    }
+
     $flatten = false;
     if (array_key_exists('flatten', $queries)) {
         if ($queries['flatten'] === 'singleResult' || $queries['flatten'] === 'singleField') {
@@ -88,7 +105,9 @@ function parseUrlParameters($queries) {
         'filter'  => $filter,
         'select'  => $select,
         'refs'    => $refs,
-        'flatten' => $flatten
+        'flatten' => $flatten,
+        'sort'    => $sort,
+        'pages'   => $pages
     ];
 }
 
@@ -109,3 +128,28 @@ function getReferenceParameters($query) {
     return $refParameters;
 }
 
+
+function parseParameterValue($queryStr) {
+    preg_match_all("/(\([\w]+(,[\w]+)*?\))+/", $queryStr, $result);
+    if (!$result) {
+        return null;
+    }
+    $values = [];
+    $result = $result[0][0];
+    $result = explode(')(', $result);
+    foreach($result as $resultItem) {
+        $resultItem = explode(",", preg_replace("/\(|\)/", "", $resultItem));
+        array_push($values, $resultItem);
+    }
+    return $values;
+}
+
+function pairs2assoc($pairs) {
+    $assoc = [];
+    foreach($pairs as $pair) {
+        if (count($pair > 1)) {
+            $assoc[$pair[0]] = json_decode($pair[1], JSON_NUMERIC_CHECK);
+        }
+    }
+    return $assoc;
+}
