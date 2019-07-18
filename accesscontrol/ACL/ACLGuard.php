@@ -133,11 +133,10 @@ class ACLGuard extends Guard {
     }
 
     public function logout($jwt) {
-        $token = $this->decodeJWT($jwt);
-        $payload = (array) $token['data'];
+        $token = $this->jwtService->decode($jwt);
         $this->acModel->insert('jwtblacklist',[
             'jwt' => $jwt,
-            'expire' => $payload['expire']
+            'expire' => $token['exp']
         ]);
     }
 
