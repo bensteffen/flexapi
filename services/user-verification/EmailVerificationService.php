@@ -16,10 +16,7 @@ class EmailVerificationService implements IfVerficationService {
         $settings = FlexAPI::get('userVerification');
         $this->validityDuration = $settings['validityDuration'];
         if (!$jwtService) {
-            $jwtService = new FirebaseJwtService(
-                FlexAPI::get('jwtSecret'),
-                $this->validityDuration
-            );
+            $jwtService = new FirebaseJwtService(FlexAPI::get('jwtSecret'));
         }
         $this->jwtService = $jwtService;
     }
@@ -35,13 +32,16 @@ class EmailVerificationService implements IfVerficationService {
         if (array_key_exists('forwardTo', $settings)) {
             $forwardTo = $settings['forwardTo'];
         }
-        $token = $this->jwtService->encode([ 'payload' => [
-            'username' => $data['username'],
-            'address' => $data['address'],
-            'forwardTo' => $forwardTo
-        ]]);
+        $token = $this->jwtService->encode([
+            'validity' => $settings['validityDuration'],
+            'payload' => [
+                'username' => $data['username'],
+                'address' => $data['address'],
+                'forwardTo' => $forwardTo
+            ]
+        ]);
         $this->acModel->insert('userverification', [
-            'expires' => time() + $this->validityDuration,
+            'expires' => time() + $settings['validityDuration'],
             'token' => $token
         ]);
         $this->sendVerificationMail($data['address'], $token);
@@ -89,6 +89,10 @@ class EmailVerificationService implements IfVerficationService {
             FlexAPI::get('apiPath'),
             $token
         );
+        // $url = FlexAPI::buildUrl([
+        //     'endpoint' => 'portal.php',
+        //     'queries' => [ 'token' => $token ]
+        // ]);
         $writeMail = $this->writeMail;
         $body = $writeMail($address, $url);
         // echo $body;

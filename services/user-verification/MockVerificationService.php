@@ -7,16 +7,10 @@ include_once __DIR__ . '/../jwt/FirebaseJwtService.php';
 class MockVerificationService implements IfVerficationService {
     protected $jwtService;
     protected $acModel = null;
-    protected $validityDuration;
 
     public function __construct($jwtService = null) {
-        $settings = FlexAPI::get('userVerification');
-        $this->validityDuration = $settings['validityDuration'];
         if (!$jwtService) {
-            $jwtService = new FirebaseJwtService(
-                FlexAPI::get('jwtSecret'),
-                $this->validityDuration
-            );
+            $jwtService = new FirebaseJwtService(FlexAPI::get('jwtSecret'));
         }
         $this->jwtService = $jwtService;
     }
@@ -27,12 +21,15 @@ class MockVerificationService implements IfVerficationService {
     }
 
     public function startVerification($data) {
-        $token = $this->jwtService->encode([ 'payload' => [
-            'username' => $data['username'],
-            'address' => $data['address'] 
-        ]]);
+        $settings = FlexAPI::get('userVerification');
+        $token = $this->jwtService->encode([
+            'payload' => [
+                'username' => $data['username'],
+                'address' => $data['address'] 
+            ]
+        ]);
         $this->acModel->insert('userverification', [
-            'expires' => time() + $this->validityDuration,
+            'expires' => time() + $settings['validityDuration'],
             'token' => $token
         ]);
         $this->sendVerificationMail($data['address'], $token);
