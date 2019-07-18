@@ -3,7 +3,7 @@
 include_once __DIR__ . "/IfDatabseConnection.php";
 include_once __DIR__ . "/AbstractSqlConnection.php";
 include_once __DIR__ . "/SqlQueryFactory.php";
-include_once __DIR__ . '/../../bs-php-utils/utils.php';
+include_once __DIR__ . '/../../../bensteffen/bs-php-utils/utils.php';
 
 class PdoPreparedConnection extends AbstractSqlConnection implements IfDatabseConnection {
     private $pdo = null;
