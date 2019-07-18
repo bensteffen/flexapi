@@ -590,14 +590,15 @@ class DataModel {
         if (!is_numeric($keyValue)) {
             $keyValue = sprintf("'%s'", $keyValue);
         }
-        return sprintf("http://%s:%s%s%s/crud.php?entity=%s&filter=%s&flatten=singleResult",
-            $_SERVER['SERVER_NAME'],
-            $_SERVER['SERVER_PORT'],
-            FlexAPI::get('basePath'),
-            FlexAPI::get('apiPath'),
-            $entityName,
-            "[$keyName,$keyValue]"
-        );
+        $keyFilter = "[$keyName,$keyValue]";
+        return FlexAPI::buildUrl([
+            'endpoint' => 'crud.php',
+            'queries' => [
+                'entity' => $entityName,
+                'filter' => $keyFilter,
+                'flatten' => 'singleResult'
+            ]
+        ]);
     }
 }
 

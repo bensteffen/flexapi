@@ -7,14 +7,11 @@ include_once __DIR__ . '/../jwt/FirebaseJwtService.php';
 class EmailVerificationService implements IfVerficationService {
     protected $jwtService;
     protected $acModel = null;
-    protected $validityDuration;
     protected $writeMail;
     protected $navigateTo;
 
     public function __construct($writeEmail, $jwtService = null) {
         $this->writeMail = $writeEmail;
-        $settings = FlexAPI::get('userVerification');
-        $this->validityDuration = $settings['validityDuration'];
         if (!$jwtService) {
             $jwtService = new FirebaseJwtService(FlexAPI::get('jwtSecret'));
         }
@@ -82,21 +79,14 @@ class EmailVerificationService implements IfVerficationService {
 
 
     protected function sendVerificationMail($address, $token) {
-        $url = sprintf("http://%s:%s%s%s/portal.php?verify=%s",
-            $_SERVER['SERVER_NAME'],
-            $_SERVER['SERVER_PORT'],
-            FlexAPI::get('basePath'),
-            FlexAPI::get('apiPath'),
-            $token
-        );
-        // $url = FlexAPI::buildUrl([
-        //     'endpoint' => 'portal.php',
-        //     'queries' => [ 'token' => $token ]
-        // ]);
+        $url = FlexAPI::buildUrl([
+            'endpoint' => 'portal.php',
+            'queries' => [
+                'verify' => $token
+            ]
+        ]);
         $writeMail = $this->writeMail;
         $body = $writeMail($address, $url);
-        // echo $body;
-        // $body = sprintf('<a href="%s">aktivieren</a>', $url);
         FlexAPI::sendMail([
             'from' => 'verification',
             'to' => $address,
@@ -106,12 +96,3 @@ class EmailVerificationService implements IfVerficationService {
     }
 }
 
-// public function cleanUp() {
-//     $settings = FlexAPI::get('userVerification');
-//     $expired = $this->acModel->read('userverification', '[expire,ls,'.time().']');
-//     foreach($expired as $verification) {
-//         $decoded = (array) JWT::decode($verification['token'], base64_decode($settings['jwtSecret']), array('HS256'));
-//         $this->acModel->delete('user', [ 'name' => $decoded['username'] ]);
-//         $this->acModel->delete('userverification', [ 'id' => $verification['id'] ]);
-//     }
-// }

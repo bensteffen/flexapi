@@ -126,6 +126,31 @@ class FlexAPI {
         die;
     }
 
+    public static function buildUrl($config) {
+        $config = setFieldDefault($config, 'scheme', FlexAPI::get('defaultUrlScheme'));
+        $queryString = '';
+        if (array_key_exists('queries', $config)) {
+            $pairs = [];
+            foreach($config['queries'] as $name => $value) {
+                array_push($pairs, "$name=".urlencode($value));
+            }
+            $queryString = '?'.implode('&', $pairs);
+        }
+        $path = sprintf('/%s/%s/%s',
+            FlexAPI::get('basePath'),
+            FlexAPI::get('apiPath'),
+            $config['endpoint']
+        );
+        $path = preg_replace('/[\/]+/', '/', $path);
+        return sprintf("%s://%s:%s%s%s",
+            $config['scheme'],
+            $_SERVER['SERVER_NAME'],
+            $_SERVER['SERVER_PORT'],
+            $path,
+            $queryString
+        );
+    }
+
     public static function sendMail($data) {
         $settings = FlexAPI::get('mailing');
         
