@@ -16,12 +16,15 @@ function flexapiPortal() {
         $response = [];
     
         $methodOk = false;
-        if ($method === 'GET' && array_key_exists('verify', $_GET)) {
-            $request = [
-                'concern' => 'verify',
-                'token' => $_GET['verify']
-            ];
-            $methodOk = true;
+        if ($method === 'GET') {
+            if (array_key_exists('verify', $_GET)) {
+                $request = [ 'concern' => 'verify', 'token' => $_GET['verify'] ];
+                $methodOk = true;
+            }
+            if (array_key_exists('passwordChange', $_GET)) {
+                $request = [ 'concern' => 'passwordChange', 'token' => $_GET['passwordChange'] ];
+                $methodOk = true;
+            }
         } elseif ($method === 'POST') {
             $methodOk = true;
         }
@@ -71,6 +74,30 @@ function flexapiPortal() {
         } elseif ($request['concern'] === 'verify') {
             FlexAPI::guard()->verifyUser($request['token']);
             $response = ["message" => "Account was verfified."];
+
+        } elseif ($request["concern"] === "passwordChange") {
+
+            if (array_key_exists('newPassword', $request)) {
+                $jwt = getJWT();
+                if ($jwt) { // password change for logged in users
+                    $newToken = FlexAPI::guard()->changePassword($jwt, $request['newPassword']);
+                    $response['message'] = 'Password changed.';
+                    $response['token'] = $newToken;
+
+                } elseif (array_key_exists('email', $request)) { // for password forgotten
+                    FlexAPI::guard()->requestPasswordChange($request['email'], $request['newPassword']);
+                    $response['message'] = 'Password change mail was sent.';
+                } else {
+                    throw(new Exception('Could not process password change due to missing parameters.', 400));
+                }
+
+            } elseif (array_key_exists('token', $request)) {
+                FlexAPI::guard()->finishPasswordChange($request['token']);
+                $response['message'] = 'Password changed.';
+
+            } else {
+                throw(new Exception('Could not process password change due to missing parameters.', 400));
+            }
         } elseif ($request["concern"] === "publish") {
             
         } else {
