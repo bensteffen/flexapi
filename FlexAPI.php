@@ -14,11 +14,11 @@ class FlexAPI {
     protected static $callbackRegister = [];
 
     public static function crud() {
-        return jsenc(flexapiCrud());
+        return json_encode(flexapiCrud());
     }
 
     public static function portal() {
-        return jsenc(flexapiPortal());
+        return json_encode(flexapiPortal());
     }
 
     public static function define($generatorFunction) {
