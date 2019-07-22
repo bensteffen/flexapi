@@ -12,6 +12,10 @@ class FlexAPI {
     public static $env = null;
     protected static $setupCallback = null;
     protected static $callbackRegister = [];
+    protected static $pipes = [
+        'input' => [],
+        'output' => [] // noch nicht eingebaut
+    ];
 
     public static function crud() {
         return json_encode(flexapiCrud());
@@ -118,6 +122,17 @@ class FlexAPI {
                 $callback($event);
             }
         }
+    }
+
+    public static function addPipe($position, IfEntityDataPipe $pipe) {
+        array_push(FlexAPI::$pipes[$position], $pipe);
+    }
+
+    public static function pipe($position, $entity, $data) {
+        foreach (FlexAPI::$pipes[$position] as $pipe) {
+            $data = $pipe->transform($entity, $data);
+        }
+        return $data;
     }
 
     public static function navigateTo($url) {
