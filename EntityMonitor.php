@@ -14,6 +14,7 @@ class EntityMonitor {
         $this->changeDataModel = new DataModel();
         $this->changeDataModel->addEntities([
             $change,
+            new ChangeMetaData(),
             new FieldChange(),
             new ChangePath()
         ]);
@@ -27,6 +28,15 @@ class EntityMonitor {
                 'context' => ['onInsert', 'beforeUpdate', 'onUpdate', 'onDelete']
             ]);
         }
+
+        $this->changeDataModel->addReference('entitychange.meta -> changemetadata');
+
+        $this->changeDataModel->addObservation([
+            'observerName' => 'changemetadata',
+            'subjectName' => 'entitychange',
+            'context' => ['onInsert', 'onDelete']
+        ]);
+
         $this->monitoredModel = $modelToWatch;
     }
 
@@ -46,23 +56,30 @@ class EntityMonitor {
         return $this->oldStates[$entity->getName()][$entityId];
     }
 
-    public function history($entity, $entityId) {
-        $changes = $this->changeDataModel->read('entitychange', [
-            'filter' => [ 'entityName' => $entity->getName(), 'entityId' => $entityId ]
-        ]);
-        $history = [[
-            'changeId' => null,
-            'state' => $this->createInitialState($entity)
-        ]];
-        foreach ($changes as $change) {
-            $n = count($history);
-            $state = $history[$n-1];
-            $state = $this->applyChange('do', $state, $change);
-            array_push($history, [
-                'changeId' => $change['id'],
-                'state' => $state
-            ]);
+    public function history($entityName, $entityId) {
+        $entity = $this->monitoredModel->getEntity($entityName);
+
+        $state = $this->getCurrentState($entity, $entityId);
+        $change = $this->getLatestChange($entity, $entityId);
+        
+        if (!$change) {
+            $result = ['newState' => $state];
         }
+
+        $history = [];
+        while($change) {
+            array_push($history, [
+                "change" => ['id' => $change['id'], 'meta' => $change['meta']],
+                "state" => $state
+            ]);
+            $result = $this->applyChange('undo', $state, $change);
+            $state = $result['newState'];
+            $change = $result['nextChange'];
+        }
+        array_push($history, [
+            "change" => null,
+            "state" => $result['newState']
+        ]);
         return $history;
     }
 
@@ -100,6 +117,7 @@ class EntityMonitor {
                 'entityName' => $entity->getName(),
                 'entityId' => $entityId
             ],
+            'references' => ['format' => 'data'],
             'flatten' => 'singleResult'
         ]);
     }
@@ -111,13 +129,15 @@ class EntityMonitor {
                 'entityId' => $entityId,
                 'isHead' => true
             ],
+            'references' => ['format' => 'data'],
             'flatten' => 'singleResult'
         ]);
     }
 
     protected function getCurrentState($entity, $entityId) {
         return $this->monitoredModel->read($entity->getName(), [
-            'filter' => $entity->uniqueFilter($entityId)
+            'filter' => $entity->uniqueFilter($entityId),
+            'flatten' => 'singleResult'
         ]);
     }
 
@@ -126,10 +146,19 @@ class EntityMonitor {
             'filter' => [ 'changeId' => $change['id'] ]
         ]);
         $map = ['undo' => 'oldValue', 'do' => 'newValue' ];
+        $dMap = ['undo' => 'previous', 'do' => 'next' ];
         foreach ($fieldChanges as $fieldChange) {
             $state[$fieldChange['fieldName']] = $fieldChange[$map[$direction]];
         }
-        return $state;
+        $nextChange = $this->changeDataModel->read('entitychange', [
+            'filter' => [ 'id' => $change[$dMap[$direction]] ],
+            'references' => ['format' => 'data'],
+            'flatten' => 'singleResult'
+        ]);
+        return [
+            'newState' => $state,
+            'nextChange' => $nextChange
+        ];
     }
 
     protected function setAsHead($change, $actualHeadId = null) {
@@ -160,7 +189,7 @@ class EntityChange extends IdEntity {
         $this->addFields([
             ['name' => 'entityName', 'type' => 'varchar', 'length' => 64],
             ['name' => 'entityId'  , 'type' => 'varchar', 'length' => 64],
-            ['name' => 'timeStamp' , 'type' => 'int'],
+            ['name' => 'meta'      , 'type' => 'int'],
             ['name' => 'next'      , 'type' => 'int', 'notNull' => false],
             ['name' => 'previous'  , 'type' => 'int', 'notNull' => false],
             ['name' => 'isHead'    , 'type' => 'boolean'],
@@ -172,16 +201,15 @@ class EntityChange extends IdEntity {
         $entity = $event['subjectEntity'];
         $keyName = $entity->uniqueKey();
         if ($event['context'] === 'onInsert') {
-            $changeId = $this->dataModel->insert('entitychange', [
-                'entityName' => $entity->getName(),
-                'entityId' => $event['insertId'],
-                'timeStamp' => time(),
-                'next' => null,
-                'previous' => null,
-                'isHead' => true,
-                'path' => 0
-            ]);
-            $this->insertFieldChanges($changeId, $entity, $this->entityMonitor->createInitialState($entity), $event['data']);
+            // $changeId = $this->dataModel->insert('entitychange', [
+            //     'entityName' => $entity->getName(),
+            //     'entityId' => $event['insertId'],
+            //     'next' => null,
+            //     'previous' => null,
+            //     'isHead' => true,
+            //     'path' => 0
+            // ]);
+            // $this->insertFieldChanges($changeId, $entity, $this->entityMonitor->createInitialState($entity), $event['data']);
         }
         if ($event['context'] === 'beforeUpdate') {
             $entityId = $event['data'][$keyName];
@@ -193,7 +221,6 @@ class EntityChange extends IdEntity {
             $nextChangeId = $this->dataModel->insert('entitychange', [
                 'entityName' => $entity->getName(),
                 'entityId' => $entityId,
-                'timeStamp' => time(),
                 'next' => null,
                 'previous' => $latestChange['id'],
                 'isHead' => true,
@@ -230,18 +257,28 @@ class EntityChange extends IdEntity {
     }
 }
 
-class ChangeMetaData extends DataEntity {
+class ChangeMetaData extends IdEntity {
     public function __construct() {
         parent::__construct('changemetadata');
         $this->addFields([
-            ['name' => 'changeId'  , 'type' => 'int'],
             ['name' => 'timeStamp' , 'type' => 'int'],
             ['name' => 'user' , 'type' => 'varchar', 'length' => 64]
         ]);
     }
 
     public function observationUpdate($event) {
-
+        if ($event['context'] === 'onInsert') {
+            $metaId = $this->dataModel->insert('changemetadata', [
+                'timeStamp' => time(),
+                'user' => FlexAPI::guard()->getUsername()
+            ]);
+            $change = $this->dataModel->read('entitychange', [
+                'filter' => [ 'id' => $event['insertId'] ],
+                'flatten' => 'singleResult'
+            ]);
+            $change['meta'] = $metaId;
+            $this->dataModel->update('entitychange', $change);
+        }
     }
 }
 

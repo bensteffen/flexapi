@@ -71,14 +71,22 @@ abstract class AbstractSqlConnection {
                 $data[$i][$key] = (array) json_decode($d[$key]);
             }
         }
-        $objectKeys = extractByKey('name', array_filter($entity->getFieldSet(), function($f) {
+        $boolKeys = extractByKey('name', array_filter($entity->getFieldSet(), function($f) {
             return $f['type'] === 'bool' || $f['type'] === 'boolean';
         }));
         foreach($data as $i => $d) {
-            foreach(array_intersect($objectKeys, array_keys($d)) as $key) {
+            foreach(array_intersect($boolKeys, array_keys($d)) as $key) {
                 $v = false;
                 if ($data[$i][$key]) { $v = true; }
                 $data[$i][$key] = $v;
+            }
+        }
+        $numKeys = extractByKey('name', array_filter($entity->getFieldSet(), function($f) {
+            return $f['type'] === 'int' || $f['type'] === 'smallint' || $f['type'] === 'decimal';
+        }));
+        foreach($data as $i => $d) {
+            foreach(array_intersect($numKeys, array_keys($d)) as $key) {
+                $data[$i][$key] = json_decode($data[$i][$key], JSON_NUMERIC_CHECK);
             }
         }
         return $data;

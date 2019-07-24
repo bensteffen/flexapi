@@ -2,14 +2,13 @@
 
 include_once __DIR__ . '/../../datamodel/IdEntity.php';
 
-class JwtBlackList extends DataEntity {
+class PasswordChange extends IdEntity {
 
     public function __construct() {
-        parent::__construct('jwtblacklist');
+        parent::__construct('passwordchange');
         $this->addFields([
             ['name' => 'jwt', 'type' => 'varchar', 'length' => 512],
-            ['name' => 'expire', 'type' => 'int']
+            ['name' => 'expires', 'type' => 'int']
         ]);
     }
 }
-

@@ -12,13 +12,17 @@ class FlexAPI {
     public static $env = null;
     protected static $setupCallback = null;
     protected static $callbackRegister = [];
+    protected static $pipes = [
+        'input' => [],
+        'output' => [] // noch nicht eingebaut
+    ];
 
     public static function crud() {
-        return jsenc(flexapiCrud());
+        return json_encode(flexapiCrud());
     }
 
     public static function portal() {
-        return jsenc(flexapiPortal());
+        return json_encode(flexapiPortal());
     }
 
     public static function define($generatorFunction) {
@@ -120,10 +124,46 @@ class FlexAPI {
         }
     }
 
+    public static function addPipe($position, IfEntityDataPipe $pipe) {
+        array_push(FlexAPI::$pipes[$position], $pipe);
+    }
+
+    public static function pipe($position, $entity, $data) {
+        foreach (FlexAPI::$pipes[$position] as $pipe) {
+            $data = $pipe->transform($entity, $data);
+        }
+        return $data;
+    }
+
     public static function navigateTo($url) {
         header('Content-Type: text/html');
         echo '<script>window.location.href="'.$url.'"</script>';
         die;
+    }
+
+    public static function buildUrl($config) {
+        $config = setFieldDefault($config, 'scheme', FlexAPI::get('defaultUrlScheme'));
+        $queryString = '';
+        if (array_key_exists('queries', $config)) {
+            $pairs = [];
+            foreach($config['queries'] as $name => $value) {
+                array_push($pairs, "$name=".urlencode($value));
+            }
+            $queryString = '?'.implode('&', $pairs);
+        }
+        $path = sprintf('/%s/%s/%s',
+            FlexAPI::get('basePath'),
+            FlexAPI::get('apiPath'),
+            $config['endpoint']
+        );
+        $path = preg_replace('/[\/]+/', '/', $path);
+        return sprintf("%s://%s:%s%s%s",
+            $config['scheme'],
+            $_SERVER['SERVER_NAME'],
+            $_SERVER['SERVER_PORT'],
+            $path,
+            $queryString
+        );
     }
 
     public static function sendMail($data) {

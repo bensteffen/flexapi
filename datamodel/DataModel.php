@@ -112,6 +112,8 @@ class DataModel {
             $data = $this->insertRegularReferences($entityName, $data);
             $this->throwExceptionOnBadReference($entityName, $data);
 
+            $data = FlexAPI::pipe('input', $entity, $data);
+
             $this->notifyObservers([
                 'subjectName' => $entityName,
                 'data'        => $data,
@@ -278,13 +280,16 @@ class DataModel {
             throw(new Exception("$username is not allowed to update $entityName.", 403));
         }
 
+        $entity = $this->getEntity($entityName);
+
+        $data = FlexAPI::pipe('input', $entity, $data);
+
         $this->notifyObservers([
             'subjectName' => $entityName,
             'data' => $data,
             'context' => 'beforeUpdate'
         ]);
 
-        $entity = $this->getEntity($entityName);
         $primaryKeyData = $entity->primaryKeyData($data);
         if ($primaryKeyData === null) {
             throw(new Exception("Can't identify object to update, because primary key data is missing.", 400));
@@ -590,14 +595,15 @@ class DataModel {
         if (!is_numeric($keyValue)) {
             $keyValue = sprintf("'%s'", $keyValue);
         }
-        return sprintf("http://%s:%s%s%s/crud.php?entity=%s&filter=%s&flatten=singleResult",
-            $_SERVER['SERVER_NAME'],
-            $_SERVER['SERVER_PORT'],
-            FlexAPI::get('basePath'),
-            FlexAPI::get('apiPath'),
-            $entityName,
-            "[$keyName,$keyValue]"
-        );
+        $keyFilter = "[$keyName,$keyValue]";
+        return FlexAPI::buildUrl([
+            'endpoint' => 'crud.php',
+            'queries' => [
+                'entity' => $entityName,
+                'filter' => $keyFilter,
+                'flatten' => 'singleResult'
+            ]
+        ]);
     }
 }
 

@@ -27,7 +27,7 @@ class DataEntity {
         $field = array_filter($this->fieldSet, function($f) use($fieldName) {
             return $f['name'] === $fieldName;
         });
-        return $field[0];
+        return array_shift($field);
     }
 
     public function setDataModel($dataModel) {

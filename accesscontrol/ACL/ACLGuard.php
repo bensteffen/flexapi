@@ -7,6 +7,7 @@ include_once __DIR__ . '/RoleAssignment.php';
 include_once __DIR__ . '/CrudPermission.php';
 include_once __DIR__ . '/Permission.php';
 include_once __DIR__ . '/JwtBlackList.php';
+include_once __DIR__ . '/PasswordChange.php';
 include_once __DIR__ . '/../../services/jwt/FirebaseJwtService.php';
 include_once __DIR__ . '/../../../../bensteffen/bs-php-utils/utils.php';
 
@@ -25,14 +26,12 @@ class ACLGuard extends Guard {
         $this->acModel->addEntity(new User());
         $this->acModel->addEntity($this->permission);
         $this->acModel->addEntity(new JwtBlackList());
+        $this->acModel->addEntity(new PasswordChange());
         $this->acModel->addEntity(new RoleAssignment());
         $this->acModel->addEntity(new CrudPermission());
 
         if (!$jwtService) {
-            $jwtService = new FirebaseJwtService(
-                FlexAPI::get('jwtSecret'),
-                FlexAPI::get('jwtValidityDuration')
-            );
+            $jwtService = new FirebaseJwtService(FlexAPI::get('jwtSecret'));
         }
         $this->jwtService = $jwtService;
 
@@ -96,6 +95,58 @@ class ACLGuard extends Guard {
         $this->acModel->delete('permission', ['user' => $this->username]);
     }
 
+    public function changePassword($auth, $newPassword) {
+        $this->login($auth);
+        $this->acModel->update('user', [
+            'name' => $this->username,
+            'password' => password_hash($newPassword, PASSWORD_DEFAULT)
+        ]);
+        if (is_string($auth)) { // if $auth was JWT, void old JWT and return new JWT
+            $this->logout($auth);
+            return $this->login([
+                'username' => $this->username,
+                'password' => $newPassword
+            ]);
+        }
+        return null;
+    }
+
+    public function requestPasswordChange($email, $newPassword) {
+        $validity = FlexAPI::get('passwordChangeValidityDuration');
+        $token = $this->jwtService->encode([
+            'validity' => $validity,
+            'payload' => [ 'user' => $email, 'newPassword' => $newPassword ]
+        ]);
+        $this->acModel->insert('passwordchange', [
+            'expires' => time() + $validity,
+            'token' => $token
+        ]);
+        $url = FlexAPI::buildUrl([
+            'endpoint' => 'portal.php',
+            'queries' => [ 'passwordChange' => $token ]
+        ]);
+        FlexAPI::sendMail([
+            'from' => 'verification',
+            'to' => $email,
+            'subject' => 'Passwort\u00e4nderung',
+            'body' => sprintf(
+                'Hallo,<br><br>'.
+                'klicke <a href="%s">hier</a>, um die Passwort\u00e4nderung abzuschließen.<br><br>',
+                $url
+            )
+        ]);
+    }
+
+    public function finishPasswordChange($jwt) {
+        $decoded = $this->jwtService->decode($jwt);
+        $payload = (array) $decoded['data'];
+        $this->acModel->update('user', [
+            'name' => $payload['user'],
+            'password' => password_hash($payload['newPassword'], PASSWORD_DEFAULT)
+        ]);
+        $this->acModel->delete('passwordchange', [ 'jwt' => $jwt ]);
+    }
+
     public function login($auth /*username and password OR JWT*/) {
         $this->username = null;
         if (is_array($auth)) {
@@ -112,7 +163,10 @@ class ACLGuard extends Guard {
             $this->username = $result['name'];
             $this->crudPermissions = $this->getCrudPermissions();
 
-            return $this->jwtService->encode(['payload' => ['username' => $this->username] ]);
+            return $this->jwtService->encode([
+                'validity' => FlexAPI::get('jwtValidityDuration'),
+                'payload' => ['username' => $this->username]
+            ]);
         } else {
             $jwtInBlacklist = $this->acModel->read('jwtblacklist', ['filter' => ['jwt' => $auth]]);
             if ($jwtInBlacklist) {
