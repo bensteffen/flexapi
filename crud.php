@@ -27,12 +27,13 @@ function flexapiCrud() {
         switch ($method) {
             case 'GET':
                 $response = FlexAPI::dataModel()->read($parameters['entity'], [
-                    'filter'     => $parameters['filter'],
-                    'references' => $parameters['refs'],
-                    'selection'  => $parameters['select'],
-                    'flatten'    => $parameters['flatten'],
-                    'sort'       => $parameters['sort'],
-                    'pagination' => $parameters['pages']
+                    'filter'      => $parameters['filter'],
+                    'references'  => $parameters['refs'],
+                    'selection'   => $parameters['select'],
+                    'flatten'     => $parameters['flatten'],
+                    'emptyResult' => $parameters['nores'],
+                    'sort'        => $parameters['sort'],
+                    'pagination'  => $parameters['pages']
                 ]);
                 break;
             case 'POST':
