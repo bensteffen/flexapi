@@ -44,8 +44,6 @@ abstract class Guard {
 
     public abstract function deletePermitted($connection, $entity, $filter);
 
-    protected abstract function getUserAccesLevel();
-
     protected abstract function onModelConnection();
 
     protected abstract function onNewEntity($entityName);
