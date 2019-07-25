@@ -99,15 +99,22 @@ function parseUrlParameters($queries) {
         }
     }
 
+    if (array_key_exists('nores', $queries)) {
+        $noresult = json_decode($queries['nores']);
+    } else {
+        $noresult = null;
+    }
+
     return [
-        'do'      => $do,
-        'entity'  => $entityName,
-        'filter'  => $filter,
-        'select'  => $select,
-        'refs'    => $refs,
-        'flatten' => $flatten,
-        'sort'    => $sort,
-        'pages'   => $pages
+        'do'       => $do,
+        'entity'   => $entityName,
+        'filter'   => $filter,
+        'select'   => $select,
+        'refs'     => $refs,
+        'flatten'  => $flatten,
+        'nores'    => $noresult,
+        'sort'     => $sort,
+        'pages'    => $pages
     ];
 }
 
