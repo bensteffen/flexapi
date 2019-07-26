@@ -143,6 +143,8 @@ class SqlQueryFactory {
             case 'int':
             case 'smallint':
             case 'decimal':
+            case 'float':
+            case 'double':
             case 'timestamp':
                 return 0;
             case 'boolean':

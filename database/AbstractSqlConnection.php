@@ -82,7 +82,7 @@ abstract class AbstractSqlConnection {
             }
         }
         $numKeys = extractByKey('name', array_filter($entity->getFieldSet(), function($f) {
-            return $f['type'] === 'int' || $f['type'] === 'smallint' || $f['type'] === 'decimal';
+            return in_array($f['type'], ['int', 'smallint', 'decimal', 'float', 'double']);
         }));
         foreach($data as $i => $d) {
             foreach(array_intersect($numKeys, array_keys($d)) as $key) {
