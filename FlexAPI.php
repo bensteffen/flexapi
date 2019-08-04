@@ -171,12 +171,14 @@ class FlexAPI {
         
         $mail = new PHPMailer(true);
         // $mail->SMTPDebug = 2;            // Enable verbose debug output
-        $mail->isSMTP();
-        $mail->Host = $settings['smtp']['host'];
-        $mail->Port = $settings['smtp']['port'];
-        $mail->SMTPAuth = true;
-        $mail->Username = $settings['smtp']['username'];
-        $mail->Password = $settings['smtp']['password'];
+	if ($settings['smtp']['host'] != '') {
+           $mail->isSMTP();
+           $mail->Host = $settings['smtp']['host'];
+           $mail->Port = $settings['smtp']['port'];
+           $mail->SMTPAuth = true;
+           $mail->Username = $settings['smtp']['username'];
+	   $mail->Password = $settings['smtp']['password'];
+        }
         // $mail->SMTPSecure = 'starttls'; // Enable TLS encryption, `ssl` also accepted
     
         $from = $settings['from'][$data['from']];
