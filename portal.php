@@ -99,7 +99,21 @@ function flexapiPortal() {
                 throw(new Exception('Could not process password change due to missing parameters.', 400));
             }
         } elseif ($request["concern"] === "publish") {
-            
+        } elseif ($request["concern"] === "roleAdministration") {
+            FlexAPI::sendEvent([
+                'eventId' => 'before-role-change',
+                'request' => $request
+            ]);
+            if (array_key_exists('assignTo', $request)) {
+                FlexAPI::guard()->assignRole($request['role'], $request['assignTo']);
+            }
+            if (array_key_exists('withdrawFrom', $request)) {
+                FlexAPI::guard()->withdrawRole($request['role'], $request['withdrawFrom']);
+            }
+            FlexAPI::sendEvent([
+                'eventId' => 'after-role-change',
+                'request' => $request
+            ]);
         } else {
             throw(new Exception("Unknown concern ".$request['concern'].".", 401));
         }
