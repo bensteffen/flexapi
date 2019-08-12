@@ -10,9 +10,9 @@ class SqlCreator implements QueryCreator {
         if ($queryValue->plain) {
             $str = $queryValue->value;
         } else {
-            $str = jsenc($queryValue->value);
+            $str = json_encode($queryValue->value);
             if (is_array($queryValue->value)) {
-                $str = jsenc($str);
+                $str = json_encode($str);
             }
         }
         return $str;
