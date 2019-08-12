@@ -392,11 +392,6 @@ class ACLGuard extends Guard {
         ]);
     }
 
-
-    protected function getUserAccesLevel() {
-        return $this->userAccessLevel;
-    }
-
     protected function onModelConnection() {
         $this->permission->setProtectedDataModel($this->protectDataModel);
     }

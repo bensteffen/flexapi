@@ -1,6 +1,7 @@
 <?php
 
 include_once __DIR__ . "/../FlexAPI.php";
+include_once __DIR__ . "/../database/FilterParser.php";
 include_once __DIR__ . "/DataReferenceSet.php";
 include_once __DIR__ . "/../../../bensteffen/bs-php-utils/Options.php";
 include_once __DIR__ . "/../accesscontrol/VoidGuard.php";

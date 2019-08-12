@@ -40,10 +40,6 @@ class VoidGuard extends Guard {
 
     }
 
-    protected function getUserAccesLevel() {
-        return 5;
-    }
-
     protected function onModelConnection() {
 
     }
