@@ -224,7 +224,7 @@ class DataModel {
         if ($this->guard->permissionsNeeded($entityName)) {
             $data = $this->guard->readPermitted($this->connection, $entity, $filter, $regularSelection, $sort);
         } else {
-            $data = $this->connection->readFromDatabase($entity, $filter, $regularSelection, true, $sort, $pagination);
+            $data = $this->connection->readFromDatabase($entity, $filter, $regularSelection, false, $sort, $pagination);
         }
 
         $this->notifyObservers([
