@@ -152,6 +152,9 @@ class SqlQueryFactory {
                 return false;
             case 'date':
                 return '1970-01-01';
+            case 'point':
+            case 'polygon':
+                return '';
         }
     }
 
@@ -182,4 +185,3 @@ class SqlQueryFactory {
         return implode(' ', $joinQueries);
     }
 }
-
