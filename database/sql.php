@@ -7,6 +7,9 @@ class SqlCreator implements QueryCreator {
     public $useTics = true;
 
     public function makeValue($queryValue) {
+        if ($queryValue->type == 'point') {
+          return sprintf('ST_GeomFromText("POINT(%f %f)")', $queryValue->value[0],$queryValue->value[1]);
+        }
         if ($queryValue->plain) {
             $str = $queryValue->value;
         } else {
@@ -38,7 +41,11 @@ class SqlCreator implements QueryCreator {
                 $str = "$d.$str";
             }
         }
-        return $str;
+        if ($column->type=='point') {
+          return sprintf('ST_X(%s) AS  %s, ST_Y(%s) AS  %s', $str, $this->addTics($column->name.'_lon'), $str, $this->addTics($column->name.'_lat'));
+        } else {
+          return $str;
+        }
     }
 
     public function makeCondition($cond) {
@@ -116,12 +123,16 @@ class SqlCreator implements QueryCreator {
 class Sql {
     protected static $sqlCreator = null;
 
-    public static function Value($value) {
-        return Sql::attachCreator(new QueryValue($value));
+    public static function Value($value, $type) {
+        return Sql::attachCreator(new QueryValue($value, $type));
     }
 
-    public static function Column($name = "*", $table = null, $database = null) {
-        return Sql::attachCreator(new QueryColumn($name, $table, $database));
+    public static function Column($name = "*", $table = null, $database = null, $type =null) {
+        $qc=new QueryColumn($name, $table, $database);
+        if ($type) {
+          $qc->type=$type;
+        }
+        return Sql::attachCreator($qc);
     }
 
     public static function Assignment($column, $value) {
@@ -183,4 +194,3 @@ class Sql {
         return $queryElement;
     }
 }
-

@@ -37,7 +37,7 @@ class FilterParser {
         list($column, $value) = assocShift($filterArray);
         $colRes = FilterParser::parseColumn($column, $this->dataModel, $this->defaultEntity, $this->defaultDatabase);
         $queryCol = new QueryColumn($colRes[2], $colRes[1], $colRes[0]);
-        $cond = new QueryCondition($queryCol, new QueryValue($value));
+        $cond = new QueryCondition($queryCol, new QueryValue($value, ''));
 
         if (count($filterArray) > 0) {
             return new QueryAnd($cond, FilterParser::parseFilterArray($filterArray));
@@ -185,4 +185,3 @@ class FilterParser {
         }
     }
 }
-

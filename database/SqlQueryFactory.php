@@ -43,7 +43,7 @@ class SqlQueryFactory {
         return sprintf("%s %s FROM `%s` %s WHERE %s%s%s",
             $select,
             Sql::Sequence($fieldSelection, function($f) use($entity) {
-                return Sql::Column($f, $entity->getName());
+              return Sql::Column($f, $entity->getName(), null, $entity->getField($f)['type']);
             })->toQuery(),
             $entity->getName(),
             SqlQueryFactory::makeReferencedTablesJoinQuery(array_merge($filter['references'])),
@@ -54,16 +54,21 @@ class SqlQueryFactory {
     }
 
     public static function makeInsertQuery($entity, $data) {
+        $extractor=function($k) use ($entity, $data) {
+            $field=$entity->getField($k);
+            $type=$field['type'];
+            return Sql::Value($data[$k], $type);
+        };
         return sprintf("INSERT INTO `%s` (%s) VALUES (%s)",
             $entity->getName(),
             Sql::Sequence(array_keys($data)  , function($f) { return Sql::Column($f); })->toQuery(),
-            Sql::Sequence(array_values($data), function($v) { return Sql::Value($v);  })->toQuery()
+            Sql::Sequence(array_keys($data), $extractor)->toQuery()
         );
     }
 
     public static function makeUpdateQuery($entity, $data) {
         $extractor = function($k) use ($data) {
-            return Sql::Assignment(Sql::Column($k), Sql::Value($data[$k]));
+            return Sql::Assignment(Sql::Column($k), Sql::Value($data[$k],'string'));
         };
         $updateKeys = array_keys(extractArray($entity->secondaryKeys(), $data));
         return sprintf("UPDATE `%s` SET %s WHERE %s",
