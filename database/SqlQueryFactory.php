@@ -67,8 +67,10 @@ class SqlQueryFactory {
     }
 
     public static function makeUpdateQuery($entity, $data) {
-        $extractor = function($k) use ($data) {
-            return Sql::Assignment(Sql::Column($k), Sql::Value($data[$k],'string'));
+        $extractor = function($k) use ($entity, $data) {
+            $field=$entity->getField($k);
+            $type=$field['type'];
+            return Sql::Assignment(Sql::Column($k), Sql::Value($data[$k],$type));
         };
         $updateKeys = array_keys(extractArray($entity->secondaryKeys(), $data));
         return sprintf("UPDATE `%s` SET %s WHERE %s",
