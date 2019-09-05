@@ -144,23 +144,33 @@ class FlexAPI {
     public static function buildUrl($config) {
         $config = setFieldDefault($config, 'scheme', FlexAPI::get('defaultUrlScheme'));
         $queryString = '';
-        if (array_key_exists('queries', $config)) {
-            $pairs = [];
-            foreach($config['queries'] as $name => $value) {
-                array_push($pairs, "$name=".urlencode($value));
-            }
-            $queryString = '?'.implode('&', $pairs);
-        }
-        $path = sprintf('/%s/%s/%s',
-            FlexAPI::get('basePath'),
-            FlexAPI::get('apiPath'),
-            $config['endpoint']
-        );
-        $path = preg_replace('/[\/]+/', '/', $path);
-        return sprintf("%s://%s:%s%s%s",
+        if (array_key_exists('frontendBaseUrl', FlexAPI::$apiSettings)) {
+          $path= FlexAPI::get('frontendBaseUrl');
+          $beginSeperator='#';
+          $valueSeperator='/';
+          $arrSeperator='';
+        } else {
+          $path = sprintf('%s://%s:%s/%s/%s/%s',
             $config['scheme'],
             $_SERVER['SERVER_NAME'],
             $_SERVER['SERVER_PORT'],
+              FlexAPI::get('basePath'),
+              FlexAPI::get('apiPath'),
+              $config['endpoint']
+          );
+          $beginSeperator='?';
+          $valueSeperator='=';
+          $arrSeperator='&';
+        }
+        if (array_key_exists('queries', $config)) {
+            $pairs = [];
+            foreach($config['queries'] as $name => $value) {
+                array_push($pairs, $name.$valueSeperator.urlencode($value));
+            }
+            $queryString = $beginSeperator.implode($arrSeperator, $pairs);
+        }
+        $path = preg_replace('/[\/]+$/', '/', $path);
+        return sprintf("%s%s",
             $path,
             $queryString
         );
@@ -168,7 +178,7 @@ class FlexAPI {
 
     public static function sendMail($data) {
         $settings = FlexAPI::get('mailing');
-        
+
         $mail = new PHPMailer(true);
         // $mail->SMTPDebug = 2;            // Enable verbose debug output
 	if ($settings['smtp']['host'] != '') {
@@ -180,7 +190,7 @@ class FlexAPI {
 	   $mail->Password = $settings['smtp']['password'];
         }
         // $mail->SMTPSecure = 'starttls'; // Enable TLS encryption, `ssl` also accepted
-    
+
         $from = $settings['from'][$data['from']];
         $mail->setFrom($from['address'], $from['name']);
 
@@ -198,9 +208,8 @@ class FlexAPI {
         $mail->Subject = $data['subject'];
         $mail->Body    = $data['body'];
         $mail->AltBody = $data['altBody']; // for non-HTML clients
-    
+
         $mail->send();
     }
 
 }
-
