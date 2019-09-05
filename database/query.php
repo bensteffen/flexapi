@@ -32,10 +32,14 @@ interface QueryCreator {
 
 class QueryValue extends QueryElement {
     public $value;
+    public $type;
     public $plain = false;
-
-    public function __construct($value) {
+    public function __construct($value, $type='') {
         $this->value = $value;
+        if ($type == '') {
+          trigger_error("Value ohne type", E_USER_WARNING);
+        }
+        $this->type = $type;
     }
 
     public function toQuery() {
@@ -48,6 +52,7 @@ class QueryColumn extends QueryElement {
     public $table;
     public $database;
     public $references;
+    public $type;
 
     public function __construct($name, $table = null, $database = null, $references = []) {
         $this->name = $name;

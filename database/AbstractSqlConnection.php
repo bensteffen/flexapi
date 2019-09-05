@@ -71,6 +71,21 @@ abstract class AbstractSqlConnection {
                 $data[$i][$key] = (array) json_decode($d[$key]);
             }
         }
+        $pointKeys = extractByKey('name', array_filter($entity->getFieldSet(), function($f) {
+            return $f['type'] === 'point';
+        }));
+        foreach($data as $i => $d) {
+            $dataKeys = array_keys($d);
+            foreach ($pointKeys as $pointKey) {
+                $latKey = $pointKey.'_lat';
+                $lonKey = $pointKey.'_lon';
+                if (in_array($latKey, $dataKeys) && in_array($lonKey, $dataKeys)) {
+                    $d[$pointKey] = [(float) $d[$latKey], (float) $d[$lonKey]];
+                    unset($d[$latKey], $d[$lonKey]);
+                    $data[$i] = $d;
+                }
+            }
+        }
         $boolKeys = extractByKey('name', array_filter($entity->getFieldSet(), function($f) {
             return $f['type'] === 'bool' || $f['type'] === 'boolean';
         }));
