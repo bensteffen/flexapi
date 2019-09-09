@@ -60,10 +60,9 @@ class MockVerificationService implements IfVerficationService {
         }
         
         $this->acModel->delete('userverification', ['id' => $pendingVerification['id']]);
-        $user['isVerified'] = true;
-        $this->acModel->update('user', $user);
 
         return [
+            'verificationSuccessfull' => true,
             'username' => $user['name']
         ];
     }

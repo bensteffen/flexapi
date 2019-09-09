@@ -73,8 +73,14 @@ class ACLGuard extends Guard {
         return $verificationData;
     }
 
-    public function verifyUser($token) {
-        $responseData = $this->verificationService->finishVerification([ 'token' => $token ]);
+    public function verifyUser($data) {
+        $responseData = $this->verificationService->finishVerification($data);
+        if ($responseData['verificationSuccessfull']) {
+            $this->acModel->update('user', [
+                'name' => $responseData['username'],
+                'isVerified' => true
+            ]);
+        }
         FlexAPI::sendEvent([
             'eventId' => 'after-user-verification',
             'response' => $responseData
