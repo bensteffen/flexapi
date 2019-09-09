@@ -19,6 +19,9 @@ function flexapiPortal() {
         if ($method === 'GET') {
             if (array_key_exists('verify', $_GET)) {
                 $request = [ 'concern' => 'verify', 'token' => $_GET['verify'] ];
+                if (array_key_exists('user', $_GET)) {
+                    $request['user'] = $_GET['user'];
+                }
                 $methodOk = true;
             }
             if (array_key_exists('passwordChange', $_GET)) {
@@ -72,7 +75,7 @@ function flexapiPortal() {
             ]);
             $response = ["message" => "User was deleted."];
         } elseif ($request['concern'] === 'verify') {
-            FlexAPI::guard()->verifyUser($request['token']);
+            FlexAPI::guard()->verifyUser($request);
             $response = ["message" => "Account was verfified."];
 
         } elseif ($request["concern"] === "passwordChange") {
