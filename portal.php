@@ -25,6 +25,10 @@ function flexapiPortal() {
                 $request = [ 'concern' => 'passwordChange', 'token' => $_GET['passwordChange'] ];
                 $methodOk = true;
             }
+            if (array_key_exists('extendLogin', $_GET)) {
+                $request = [ 'concern' => 'extendLogin' ];
+                $methodOk = true;
+            }
         } elseif ($method === 'POST') {
             $methodOk = true;
         }
@@ -40,6 +44,13 @@ function flexapiPortal() {
                 "token" => $token,
             ];
         // TODO: add concern "verify (registration)"
+        } elseif ($request["concern"] === "extendLogin") {
+            $jwt = getJWT();
+            $jwt = FlexAPI::guard()->extendLogin($jwt);
+            $response = [
+                "message" => "Extension successfull",
+                "token" => $jwt
+            ];
         } elseif ($request["concern"] === "logout") {
             FlexAPI::guard()->logout(getJWT());
             $response = ["message" => "Logout sucessfull"];
