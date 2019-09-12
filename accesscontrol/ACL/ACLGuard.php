@@ -165,7 +165,7 @@ class ACLGuard extends Guard {
 
             return $this->jwtService->encode([
                 'validity' => FlexAPI::get('jwtValidityDuration'),
-                'payload' => ['username' => $this->username]
+                'payload' => [ 'username' => $this->username, 'purpose' => 'authentification' ]
             ]);
         } else {
             $jwtInBlacklist = $this->acModel->read('jwtblacklist', ['filter' => ['jwt' => $auth]]);
@@ -184,6 +184,22 @@ class ACLGuard extends Guard {
 
             return $auth;
         }
+    }
+
+    public function extendLogin($jwt) {
+        $decoded = $this->jwtService->decode($jwt);
+        $payload = (array) $decoded['data'];
+        if (!array_key_exists('purpose', $payload) || $payload['purpose'] !== 'authentification') {
+            throw(new Exception("Given token can not be extended.", 400));
+        }
+        $extension = FlexAPI::get('jwtValidityExtension');
+        if ($decoded['exp'] - time() < $extension) {
+            return $this->jwtService->encode([
+                'validity' => $extension,
+                'payload' => [ 'username' => $payload['username'], 'purpose' => 'authentification' ]
+            ]);
+        }
+        return $jwt;
     }
 
     public function logout($jwt) {
