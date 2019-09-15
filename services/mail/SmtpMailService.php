@@ -13,12 +13,14 @@ class SmtpMailService implements IfMailService {
 
         $this->mailer = new PHPMailer(true);
 
-        $this->mailer->isSMTP();
-        $this->mailer->Host = $smtpCredentials['host'];
-        $this->mailer->Port = $smtpCredentials['port'];
-        $this->mailer->SMTPAuth = true;
-        $this->mailer->Username = $smtpCredentials['username'];
-        $this->mailer->Password = $smtpCredentials['password'];
+        if ($smtpCredentials['host'] != '') {
+            $this->mailer->isSMTP();
+            $this->mailer->Host = $smtpCredentials['host'];
+            $this->mailer->Port = $smtpCredentials['port'];
+            $this->mailer->SMTPAuth = true;
+            $this->mailer->Username = $smtpCredentials['username'];
+            $this->mailer->Password = $smtpCredentials['password'];
+        }
 
         $this->mailer->isHTML(true);
         $this->mailer->setFrom($from['address'], $from['name']);
