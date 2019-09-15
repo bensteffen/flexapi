@@ -9,8 +9,8 @@ class EntityMonitor {
     protected $changeDataModel;
     protected $oldStates = [];
 
-    public function __construct($modelToWatch, $entitiesToWatch) {
-        $change= new EntityChange($this);
+    public function __construct($modelToWatch, $entitiesToWatch, $changeNotification = null) {
+        $change= new EntityChange($this, $changeNotification);
         $this->changeDataModel = new DataModel();
         $this->changeDataModel->addEntities([
             $change,
@@ -181,10 +181,12 @@ class EntityMonitor {
 
 class EntityChange extends IdEntity {
     protected $entityMonitor;
+    protected $notification = null;
     protected $oldStates = [];
 
-    public function __construct($entityMonitor) {
+    public function __construct($entityMonitor, $notification) {
         $this->entityMonitor = $entityMonitor;
+        $this->notification = $notification;
         parent::__construct('entitychange');
         $this->addFields([
             ['name' => 'entityName', 'type' => 'varchar', 'length' => 64],
@@ -228,7 +230,26 @@ class EntityChange extends IdEntity {
             ]);
             $this->dataModel->update('entitychange', ['id' => $latestChange['id'], 'isHead' => false, 'next' => $nextChangeId]);
             $oldState = $this->entityMonitor->getOldState($entity, $entityId);
-            $this->insertFieldChanges($nextChangeId, $entity, $oldState, $event['data']);
+            $fieldChanges = $this->insertFieldChanges($nextChangeId, $entity, $oldState, $event['data']);
+
+            if (count($fieldChanges) && $this->notification) {
+                $change = $this->dataModel->read('entitychange', [
+                    'filter' => ['id' => $nextChangeId ],
+                    'flatten' => 'singleResult'
+                ]);
+                $metaData = $this->dataModel->read('changemetadata', [
+                    'filter' => [ 'id' => $change['meta'] ],
+                    'flatten' => 'singleResult'
+                ]);
+                $subject = $this->notification['subject'];
+                $body = $this->notification['body'];
+                FlexAPI::sendMail([
+                    'from' => $this->notification['from'],
+                    'to' => $this->notification['to'],
+                    'subject' => $subject($entity->getName()),
+                    'body' => $body($entity->getName(), $entityId, $metaData, $fieldChanges)
+                ]);
+            }
         }
         if ($event['context'] === 'onDelete') {
             
@@ -254,6 +275,7 @@ class EntityChange extends IdEntity {
             }
         }
         $this->dataModel->insert('fieldchange', $fieldChanges);
+        return $fieldChanges;
     }
 }
 
