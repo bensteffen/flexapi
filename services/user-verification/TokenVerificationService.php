@@ -24,6 +24,12 @@ class TokenVerificationService implements IfVerficationService {
 
     public function startVerification($data) {
         $token = $this->tokenService->generate();
+
+        // gnereiere Neues, falls generiertes Token zufälligerweise in Verwendung ist:
+        while ($this->acModel->read('userverificationtoken', ['filter' => [ 'token' => $token ] ])) {
+            $token = $this->tokenService->generate();
+        }
+
         $this->acModel->insert('userverificationtoken', [
             'user' => $data['username'],
             'token' => $token,
