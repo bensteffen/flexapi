@@ -5,12 +5,14 @@ include_once __DIR__ . '/TokenVerificationEntity.php';
 
 class TokenVerificationService implements IfVerficationService {
     private $settings = [];
+    private $writeMail = null;
     private $acModel = null;
     private $mailService = null;
     private $tokenService = null;
 
-    public function __construct($settings, $mailService, $tokenService) {
+    public function __construct($settings, $writeMail, $mailService, $tokenService) {
         $this->settings = $settings;
+        $this->writeMail = $writeMail;
         $this->mailService = $mailService;
         $this->tokenService = $tokenService;
     }
@@ -28,7 +30,8 @@ class TokenVerificationService implements IfVerficationService {
             'expires' => time() + $this->settings['validityDuration']
         ]);
 
-        $message = 'Hallo,<br>ihr Aktivierungs-Code lautet: '.$token.'<br>';
+        $writeMail = $this->writeMail;
+        $message = $writeMail($token);
 
         $this->mailService->send($data['address'], 'Aktivierungs-Token', $message);
     }
