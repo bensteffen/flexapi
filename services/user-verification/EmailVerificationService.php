@@ -43,7 +43,9 @@ class EmailVerificationService implements IfVerficationService {
         ]);
         $this->sendVerificationMail($data['address'], $token);
 
-        return [];
+        return [
+            'verificationMailSent' => true
+        ];
     }
 
     public function finishVerification($data) {

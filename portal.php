@@ -60,7 +60,9 @@ function flexapiPortal() {
                 'request' => $request
             ]);
             $response = ["message" => "User was created."];
-            $response = array_merge($response, $verificationData);
+            if (is_array($verificationData)) {
+                $response = array_merge($response, $verificationData);
+            }
         } elseif ($request["concern"] === "unregister") {
             FlexAPI::sendEvent([
                 'eventId' => 'before-user-unregistration',

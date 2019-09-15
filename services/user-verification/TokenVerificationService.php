@@ -34,6 +34,10 @@ class TokenVerificationService implements IfVerficationService {
         $message = $writeMail($token);
 
         $this->mailService->send($data['address'], 'Aktivierungs-Token', $message);
+
+        return [
+            'verificationMailSent' => true
+        ];
     }
 
     public function finishVerification($data) {
