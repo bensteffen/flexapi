@@ -190,8 +190,11 @@ class FlexAPI {
 	   $mail->Password = $settings['smtp']['password'];
         }
         // $mail->SMTPSecure = 'starttls'; // Enable TLS encryption, `ssl` also accepted
-
         $from = $settings['from'][$data['from']];
+        print_r($from);
+        if (! defined($from)) {
+          $from = FlexAPI::get('defaultFrom');
+        }
         $mail->setFrom($from['address'], $from['name']);
 
         $addresses = $data['to'];
