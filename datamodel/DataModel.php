@@ -28,7 +28,8 @@ class DataModel {
             'flatten' => false,
             'emptyResult' => null,
             'sort' => [],
-            'pagination' => []
+            'pagination' => [],
+            'onlyOwn' => false
         ]);
         $this->references = new DataReferenceSet();
         $this->setGuard(new VoidGuard());
@@ -212,6 +213,7 @@ class DataModel {
         $emptyResult = $this->readOptions->valueOf('emptyResult');
         $sort = $this->reshapeSort($this->readOptions->valueOf('sort'));
         $pagination = $this->reshapePagination($this->readOptions->valueOf('pagination'));
+        $onlyOwn = $this->readOptions->valueOf('onlyOwn');
         
         if (!$this->guard->userMay('read', $entityName)) {
             throw(new Exception("User is not allowed to read from '$entityName' specified by " . jsenc($filter) . ".", 403));
@@ -222,8 +224,10 @@ class DataModel {
         if (count($regularSelection) === 0) {
             $regularSelection = $entity->fieldNames();
         }
-        if ($this->guard->permissionsNeeded($entityName)) {
-            $data = $this->guard->readPermitted($this->connection, $entity, $filter, $regularSelection, $sort);
+
+        $permissionNeeded = $this->guard->permissionsNeeded($entityName);
+        if ($permissionNeeded || (!$permissionNeeded && $onlyOwn)) {
+            $data = $this->guard->readPermitted($this->connection, $entity, $filter, $regularSelection, $sort, $onlyOwn);
         } else {
             $data = $this->connection->readFromDatabase($entity, $filter, $regularSelection, false, $sort, $pagination);
         }
