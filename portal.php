@@ -19,6 +19,9 @@ function flexapiPortal() {
         if ($method === 'GET') {
             if (array_key_exists('verify', $_GET)) {
                 $request = [ 'concern' => 'verify', 'token' => $_GET['verify'] ];
+                if (array_key_exists('user', $_GET)) {
+                    $request['user'] = $_GET['user'];
+                }
                 $methodOk = true;
             }
             if (array_key_exists('passwordChange', $_GET)) {
@@ -68,7 +71,9 @@ function flexapiPortal() {
                 'request' => $request
             ]);
             $response = ["message" => "User was created."];
-            $response = array_merge($response, $verificationData);
+            if (is_array($verificationData)) {
+                $response = array_merge($response, $verificationData);
+            }
         } elseif ($request["concern"] === "unregister") {
             FlexAPI::sendEvent([
                 'eventId' => 'before-user-unregistration',
@@ -83,7 +88,7 @@ function flexapiPortal() {
             ]);
             $response = ["message" => "User was deleted."];
         } elseif ($request['concern'] === 'verify') {
-            FlexAPI::guard()->verifyUser($request['token']);
+            FlexAPI::guard()->verifyUser($request);
             $response = ["message" => "Account was verfified."];
 
         } elseif ($request["concern"] === "passwordChange") {

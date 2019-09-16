@@ -43,7 +43,9 @@ class EmailVerificationService implements IfVerficationService {
         ]);
         $this->sendVerificationMail($data['address'], $token);
 
-        return [];
+        return [
+            'verificationMailSent' => true
+        ];
     }
 
     public function finishVerification($data) {
@@ -68,10 +70,9 @@ class EmailVerificationService implements IfVerficationService {
         }
         
         $this->acModel->delete('userverification', ['id' => $pendingVerification['id']]);
-        $user['isVerified'] = true;
-        $this->acModel->update('user', $user);
 
         return [
+            'verificationSuccessfull' => true,
             'username' => $user['name'],
             'forwardTo' => $payload['forwardTo']
         ];
