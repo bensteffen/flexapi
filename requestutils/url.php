@@ -105,6 +105,12 @@ function parseUrlParameters($queries) {
         $noresult = null;
     }
 
+    if (array_key_exists('onlyOwn', $queries)) {
+        $onlyOwn = true;
+    } else {
+        $onlyOwn = false;
+    }
+
     return [
         'do'       => $do,
         'entity'   => $entityName,
@@ -114,7 +120,8 @@ function parseUrlParameters($queries) {
         'flatten'  => $flatten,
         'nores'    => $noresult,
         'sort'     => $sort,
-        'pages'    => $pages
+        'pages'    => $pages,
+        'onlyOwn'  => $onlyOwn
     ];
 }
 
