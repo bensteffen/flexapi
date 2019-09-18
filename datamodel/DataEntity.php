@@ -7,6 +7,7 @@ class DataEntity {
     protected $name;
     protected $fieldSet;
     protected $dataModel = null;
+    protected $queryFactories = [];
 
     public function __construct($name) {
         $this->name = $name;
@@ -86,6 +87,20 @@ class DataEntity {
 
     public function update($updateEvent) {
 
+    }
+
+    public function registerQueryFactory($language, $method, $factory) {
+        $factory->setEntity($this);
+        $this->queryFactories[$language] = [$method => $factory];
+    }
+
+    public function getQueryFactory($language, $method) {
+        if (array_key_exists($language, $this->queryFactories)) {
+            if (array_key_exists($method, $this->queryFactories[$language])) {
+                return $this->queryFactories[$language][$method];
+            }
+        }
+        return null;
     }
 
     // public function fromJson($fileName) {
