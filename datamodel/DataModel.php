@@ -299,6 +299,9 @@ class DataModel {
         if ($primaryKeyData === null) {
             throw(new Exception("Can't identify object to update, because primary key data is missing.", 400));
         }
+        if (!$this->read($entityName, ['filter' => $primaryKeyData])) {
+            throw(new Exception("Can't identify object to update.", 400));
+        }
         $this->throwExceptionOnBadReference($entityName, $data);
         if ($this->guard->permissionsNeeded($entityName)) {
             $filter = $this->parseFilter($primaryKeyData, $entityName);
