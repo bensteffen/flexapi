@@ -25,6 +25,7 @@ class SqlCreator implements QueryCreator {
         $n = $this->addTics($column->name);
         $t = $this->addTics($column->table);
         $d = $this->addTics($column->database);
+        $a = $column->alias;
         $refs = $column->references;
         if (count($refs) > 0) {
             foreach($refs as $refId => $ref) {
@@ -44,6 +45,9 @@ class SqlCreator implements QueryCreator {
         if ($column->type=='point') {
           return sprintf('ST_X(%s) AS  %s, ST_Y(%s) AS  %s', $str, $this->addTics($column->name.'_lon'), $str, $this->addTics($column->name.'_lat'));
         } else {
+          if ($a) {
+              $str .= ' AS '.$a;
+          }
           return $str;
         }
     }
@@ -127,10 +131,13 @@ class Sql {
         return Sql::attachCreator(new QueryValue($value, $type));
     }
 
-    public static function Column($name = "*", $table = null, $database = null, $type =null) {
+    public static function Column($name = "*", $table = null, $database = null, $type =null, $alias = null) {
         $qc=new QueryColumn($name, $table, $database);
         if ($type) {
           $qc->type=$type;
+        }
+        if ($alias) {
+          $qc->alias=$alias;
         }
         return Sql::attachCreator($qc);
     }
