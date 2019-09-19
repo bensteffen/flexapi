@@ -228,7 +228,9 @@ class EntityChange extends IdEntity {
                 'isHead' => true,
                 'path' => 0
             ]);
-            $this->dataModel->update('entitychange', ['id' => $latestChange['id'], 'isHead' => false, 'next' => $nextChangeId]);
+            if ($latestChange['id']) {
+                $this->dataModel->update('entitychange', ['id' => $latestChange['id'], 'isHead' => false, 'next' => $nextChangeId]);
+            }
             $oldState = $this->entityMonitor->getOldState($entity, $entityId);
             $fieldChanges = $this->insertFieldChanges($nextChangeId, $entity, $oldState, $event['data']);
 
