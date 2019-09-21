@@ -6,6 +6,7 @@ include_once __DIR__ . "/DataReferenceSet.php";
 include_once __DIR__ . "/../../../bensteffen/bs-php-utils/Options.php";
 include_once __DIR__ . "/../accesscontrol/VoidGuard.php";
 include_once __DIR__ . "/../../../bensteffen/bs-php-utils/utils.php";
+include_once __DIR__ . "/../services/pipes/StripAutoIncrementKeyFieldPipe.php";
 
 class DataModel {
     protected $connection = null;
@@ -16,6 +17,7 @@ class DataModel {
     protected $readOptions;
     protected $observationOptions;
     protected $filterParser;
+    protected $stripAutoIncrementKeyFieldPipe = null;
 
     public function __construct() {
         $this->readOptions = new Options([
@@ -35,6 +37,7 @@ class DataModel {
         $this->setGuard(new VoidGuard());
         $this->filterParser =  new FilterParser();
         $this->filterParser->dataModel = $this;
+        $this->stripAutoIncrementKeyFieldPipe = new StripAutoIncrementKeyFieldPipe();
     }
 
     public function setConnection($connection) {
@@ -114,6 +117,7 @@ class DataModel {
             $data = $this->insertRegularReferences($entityName, $data);
             $this->throwExceptionOnBadReference($entityName, $data);
 
+            $data = $this->stripAutoIncrementKeyFieldPipe->transform($entity, $data);
             $data = FlexAPI::pipe('input', $entity, $data);
 
             $this->notifyObservers([
