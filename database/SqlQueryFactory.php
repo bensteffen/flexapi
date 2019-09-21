@@ -11,7 +11,7 @@ class SqlQueryFactory {
             $pkQuery = sprintf(', PRIMARY KEY (%s)', Sql::Sequence($primaryKeys, function($k) { return Sql::Column($k); })->toQuery());
         }
         // $sqlFormat = "CREATE TABLE IF NOT EXISTS `%s` (%s%s) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;";
-        $sqlFormat = "CREATE TABLE IF NOT EXISTS `%s` (%s%s) ENGINE=InnoDB  DEFAULT CHARSET=utf8;";
+        $sqlFormat = "CREATE TABLE IF NOT EXISTS `%s` (%s%s) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;";
         return sprintf(
             $sqlFormat,
             $entity->getName(),
