@@ -6,6 +6,7 @@ include_once __DIR__ . "/DataReferenceSet.php";
 include_once __DIR__ . "/../../../bensteffen/bs-php-utils/Options.php";
 include_once __DIR__ . "/../accesscontrol/VoidGuard.php";
 include_once __DIR__ . "/../../../bensteffen/bs-php-utils/utils.php";
+include_once __DIR__ . "/../services/pipes/StripAutoIncrementKeyFieldPipe.php";
 
 class DataModel {
     protected $connection = null;
@@ -16,6 +17,7 @@ class DataModel {
     protected $readOptions;
     protected $observationOptions;
     protected $filterParser;
+    protected $stripAutoIncrementKeyFieldPipe = null;
 
     public function __construct() {
         $this->readOptions = new Options([
@@ -28,12 +30,14 @@ class DataModel {
             'flatten' => false,
             'emptyResult' => null,
             'sort' => [],
-            'pagination' => []
+            'pagination' => [],
+            'onlyOwn' => false
         ]);
         $this->references = new DataReferenceSet();
         $this->setGuard(new VoidGuard());
         $this->filterParser =  new FilterParser();
         $this->filterParser->dataModel = $this;
+        $this->stripAutoIncrementKeyFieldPipe = new StripAutoIncrementKeyFieldPipe();
     }
 
     public function setConnection($connection) {
@@ -113,6 +117,7 @@ class DataModel {
             $data = $this->insertRegularReferences($entityName, $data);
             $this->throwExceptionOnBadReference($entityName, $data);
 
+            $data = $this->stripAutoIncrementKeyFieldPipe->transform($entity, $data);
             $data = FlexAPI::pipe('input', $entity, $data);
 
             $this->notifyObservers([
@@ -212,6 +217,7 @@ class DataModel {
         $emptyResult = $this->readOptions->valueOf('emptyResult');
         $sort = $this->reshapeSort($this->readOptions->valueOf('sort'));
         $pagination = $this->reshapePagination($this->readOptions->valueOf('pagination'));
+        $onlyOwn = $this->readOptions->valueOf('onlyOwn');
         
         if (!$this->guard->userMay('read', $entityName)) {
             throw(new Exception("User is not allowed to read from '$entityName' specified by " . jsenc($filter) . ".", 403));
@@ -222,8 +228,10 @@ class DataModel {
         if (count($regularSelection) === 0) {
             $regularSelection = $entity->fieldNames();
         }
-        if ($this->guard->permissionsNeeded($entityName)) {
-            $data = $this->guard->readPermitted($this->connection, $entity, $filter, $regularSelection, $sort);
+
+        $permissionNeeded = $this->guard->permissionsNeeded($entityName);
+        if ($permissionNeeded || (!$permissionNeeded && $onlyOwn)) {
+            $data = $this->guard->readPermitted($this->connection, $entity, $filter, $regularSelection, $sort, $onlyOwn);
         } else {
             $data = $this->connection->readFromDatabase($entity, $filter, $regularSelection, false, $sort, $pagination);
         }
@@ -294,6 +302,9 @@ class DataModel {
         $primaryKeyData = $entity->primaryKeyData($data);
         if ($primaryKeyData === null) {
             throw(new Exception("Can't identify object to update, because primary key data is missing.", 400));
+        }
+        if (!$this->read($entityName, ['filter' => $primaryKeyData])) {
+            throw(new Exception("Can't identify object to update.", 400));
         }
         $this->throwExceptionOnBadReference($entityName, $data);
         if ($this->guard->permissionsNeeded($entityName)) {

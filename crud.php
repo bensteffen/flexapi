@@ -33,7 +33,8 @@ function flexapiCrud() {
                     'flatten'     => $parameters['flatten'],
                     'emptyResult' => $parameters['nores'],
                     'sort'        => $parameters['sort'],
-                    'pagination'  => $parameters['pages']
+                    'pagination'  => $parameters['pages'],
+                    'onlyOwn'     => $parameters['onlyOwn'],
                 ]);
                 break;
             case 'POST':

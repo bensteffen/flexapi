@@ -33,7 +33,12 @@ abstract class AbstractSqlConnection {
 
     public function readFromDatabase($entity, $filter, $fieldSelection, $distinct = true, $order = [], $pagination = []) {
         $this->checkConnection();
-        $selectQuery = SqlQueryFactory::makeSelectQuery($entity, $filter, $fieldSelection, $distinct, $order, $pagination);
+        $queryFactory = $entity->getQueryFactory('sql', 'read');
+        if ($queryFactory) {
+            $selectQuery = $queryFactory->makeQuery($filter, $fieldSelection, $distinct, $order, $pagination);
+        } else {
+            $selectQuery = SqlQueryFactory::makeSelectQuery($entity, $filter, $fieldSelection, $distinct, $order, $pagination);
+        }
         // echo "<br>select query: $selectQuery<br>";
         return $this->finishData($entity, $this->fetchData($this->executeQuery($selectQuery)));
     }

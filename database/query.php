@@ -53,6 +53,7 @@ class QueryColumn extends QueryElement {
     public $database;
     public $references;
     public $type;
+    public $alias;
 
     public function __construct($name, $table = null, $database = null, $references = []) {
         $this->name = $name;
