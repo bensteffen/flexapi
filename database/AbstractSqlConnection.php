@@ -66,7 +66,7 @@ abstract class AbstractSqlConnection {
         }
         return $data;
     }
-    
+
     public function finishData($entity, $data) {
         $objectKeys = extractByKey('name', array_filter($entity->getFieldSet(), function($f) {
             return $f['type'] === 'object';
@@ -85,7 +85,7 @@ abstract class AbstractSqlConnection {
                 $latKey = $pointKey.'_lat';
                 $lonKey = $pointKey.'_lon';
                 if (in_array($latKey, $dataKeys) && in_array($lonKey, $dataKeys)) {
-                    $d[$pointKey] = [(float) $d[$latKey], (float) $d[$lonKey]];
+                    $d[$pointKey] = [(float) $d[$lonKey], (float) $d[$latKey]];
                     unset($d[$latKey], $d[$lonKey]);
                     $data[$i] = $d;
                 }
