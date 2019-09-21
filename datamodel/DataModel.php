@@ -225,9 +225,6 @@ class DataModel {
 
         $entity = $this->getEntity($entityName);
         $regularSelection = $selection['regular'];
-        if (count($regularSelection) === 0) {
-            $regularSelection = $entity->fieldNames();
-        }
 
         $permissionNeeded = $this->guard->permissionsNeeded($entityName);
         if ($permissionNeeded || (!$permissionNeeded && $onlyOwn)) {
