@@ -5,14 +5,18 @@ include_once __DIR__ . '/TokenVerificationEntity.php';
 
 class TokenVerificationService implements IfVerficationService {
     private $settings = [];
-    private $writeMail = null;
+    private $writeHTMLMail = null;
+    private $writePlainMail = null;
     private $acModel = null;
     private $mailService = null;
     private $tokenService = null;
+    private $subject = null;
 
-    public function __construct($settings, $writeMail, $mailService, $tokenService) {
+    public function __construct($settings, $subject, $writeHTMLMail, $writePlainMail, $mailService, $tokenService) {
         $this->settings = $settings;
-        $this->writeMail = $writeMail;
+        $this->subject = $subject;
+        $this->writeHTMLMail = $writeHTMLMail;
+        $this->writePlainMail = $writePlainMail;
         $this->mailService = $mailService;
         $this->tokenService = $tokenService;
     }
@@ -36,10 +40,18 @@ class TokenVerificationService implements IfVerficationService {
             'expires' => time() + $this->settings['validityDuration']
         ]);
 
-        $writeMail = $this->writeMail;
-        $message = $writeMail($token);
+        $writeHTMLMail = $this->writeHTMLMail;
+        $writePlainMail = $this->writePlainMail;
+        $url = FlexAPI::buildUrl([
+            'endpoint' => 'portal.php',
+            'queries' => [
+                'token' => $token
+            ]
+        ]);
+        $messageHTML = $writeHTMLMail($token, $url);
+        $messagePlain = $writePlainMail($token, $url);
 
-        $this->mailService->send($data['address'], 'Aktivierungs-Token', $message);
+        $this->mailService->send($data['address'], $this->subject, $messageHTML, $messagePlain);
 
         return [
             'verificationMailSent' => true
@@ -51,7 +63,7 @@ class TokenVerificationService implements IfVerficationService {
             'filter' => [ 'user' => $data['user'], 'token' => $data['token'] ],
             'flatten' => 'singleResult'
         ]);
-        
+
         if (!$pendingVerification) {
             throw(new Exception('No pending verification found for given user and token.', 400));
         }
@@ -61,6 +73,6 @@ class TokenVerificationService implements IfVerficationService {
         return [
             'verificationSuccessfull' => true,
             'username' => $data['user']
-        ];        
+        ];
     }
 }

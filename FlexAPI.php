@@ -146,7 +146,7 @@ class FlexAPI {
         $queryString = '';
         if (array_key_exists('frontendBaseUrl', FlexAPI::$apiSettings)) {
           $path= FlexAPI::get('frontendBaseUrl');
-          $beginSeperator='#';
+          $beginSeperator='/#/';
           $valueSeperator='/';
           $arrSeperator='';
         } else {
