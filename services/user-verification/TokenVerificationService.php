@@ -42,12 +42,8 @@ class TokenVerificationService implements IfVerficationService {
 
         $writeHTMLMail = $this->writeHTMLMail;
         $writePlainMail = $this->writePlainMail;
-        $url = FlexAPI::buildUrl([
-            'endpoint' => 'portal.php',
-            'queries' => [
-                'token' => $token
-            ]
-        ]);
+
+        $url = FlexAPI::get('frontendBaseUrl').'/#/token/'.$data[username] ."/". $token;
         $messageHTML = $writeHTMLMail($token, $url);
         $messagePlain = $writePlainMail($token, $url);
 
