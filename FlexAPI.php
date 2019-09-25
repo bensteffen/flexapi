@@ -144,12 +144,6 @@ class FlexAPI {
     public static function buildUrl($config) {
         $config = setFieldDefault($config, 'scheme', FlexAPI::get('defaultUrlScheme'));
         $queryString = '';
-        if (array_key_exists('frontendBaseUrl', FlexAPI::$apiSettings)) {
-          $path= FlexAPI::get('frontendBaseUrl');
-          $beginSeperator='#';
-          $valueSeperator='/';
-          $arrSeperator='';
-        } else {
           $path = sprintf('%s://%s:%s/%s/%s/%s',
             $config['scheme'],
             $_SERVER['SERVER_NAME'],
@@ -157,11 +151,10 @@ class FlexAPI {
               FlexAPI::get('basePath'),
               FlexAPI::get('apiPath'),
               $config['endpoint']
-          );
-          $beginSeperator='?';
-          $valueSeperator='=';
-          $arrSeperator='&';
-        }
+        );
+        $beginSeperator='?';
+        $valueSeperator='=';
+        $arrSeperator='&';
         if (array_key_exists('queries', $config)) {
             $pairs = [];
             foreach($config['queries'] as $name => $value) {
@@ -191,7 +184,6 @@ class FlexAPI {
         }
         // $mail->SMTPSecure = 'starttls'; // Enable TLS encryption, `ssl` also accepted
         $from = $settings['from'][$data['from']];
-        print_r($from);
         if (! defined($from)) {
           $from = FlexAPI::get('defaultFrom');
         }

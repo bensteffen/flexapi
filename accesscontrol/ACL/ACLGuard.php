@@ -127,17 +127,15 @@ class ACLGuard extends Guard {
             'expires' => time() + $validity,
             'token' => $token
         ]);
-        $url = FlexAPI::buildUrl([
-            'endpoint' => 'portal.php',
-            'queries' => [ 'passwordChange' => $token ]
-        ]);
+        $url = FlexAPI::get('frontendBaseUrl').'/#/passwordChangeToken/'. $token;
+
         FlexAPI::sendMail([
             'from' => 'verification',
             'to' => $email,
-            'subject' => 'Passwort\u00e4nderung',
+            'subject' => 'Passwort vergesssen?',
             'body' => sprintf(
-                'Hallo,<br><br>'.
-                'klicke <a href="%s">hier</a>, um die Passwort\u00e4nderung abzuschließen.<br><br>',
+                'Hallo,<br>'.
+                'wenn Du eine Passwort&auml;nderung beauftragt hast, klicke bitte hier  <a href="%s">hier</a>, um die Passwort&auml;nderung vom ADFC Tempo30 vor sozailen Einrichtungen abzuschlie&szlig;en.',
                 $url
             )
         ]);
@@ -183,8 +181,8 @@ class ACLGuard extends Guard {
             } catch (Exception $exc) {
                 throw(new Exception("Invalid authentication: ".$exc->getMessage(), 401));
             }
-            $payload = (array) $decoded['data']; 
-            
+            $payload = (array) $decoded['data'];
+
             $this->username = $payload['username'];
             $this->crudPermissions = $this->getCrudPermissions();
 
@@ -430,4 +428,3 @@ class ACLGuard extends Guard {
         }
     }
 }
-

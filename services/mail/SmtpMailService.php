@@ -23,6 +23,9 @@ class SmtpMailService implements IfMailService {
         }
 
         $this->mailer->isHTML(true);
+        $this->mailer->CharSet = 'UTF-8';
+        $this->mailer->Encoding = 'quoted-printable';
+
         $this->mailer->setFrom($from['address'], $from['name']);
     }
 
@@ -39,5 +42,5 @@ class SmtpMailService implements IfMailService {
         $this->mailer->AltBody = $altBody; // for non-HTML clients
 
         $this->mailer->send();
-    } 
+    }
 }
