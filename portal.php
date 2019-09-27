@@ -80,7 +80,14 @@ function flexapiPortal() {
                 'username' => $request['username']
             ]);
     
-            FlexAPI::guard()->unregisterUser($request['username'], $request['password']);
+            $auth = getJWT();
+            if (!$auth) {
+                $auth = [
+                    'username' => $request['username'],
+                    'password' => $request['password']
+                ];
+            }
+            FlexAPI::guard()->unregisterUser($auth);
     
             FlexAPI::sendEvent([
                 'eventId' => 'after-user-unregistration',
@@ -91,6 +98,20 @@ function flexapiPortal() {
             FlexAPI::guard()->verifyUser($request);
             $response = ["message" => "Account was verfified."];
 
+        } elseif ($request["concern"] === "emailChange") {
+            $jwt = getJWT();
+            if (!array_key_exists('token', $request)) {
+                FlexAPI::guard()->requestEmailChange($jwt, $request['newEmail']);
+            } else {
+                $result = FlexAPI::guard()->changeEmail($jwt, $request);
+                if ($result['emailChangeSuccessfull']) {
+                    FlexAPI::sendEvent([
+                        'eventId' => 'after-email-change',
+                        'result' => $result
+                    ]);
+                    $response['message'] = 'Email was changed.';
+                }
+            }
         } elseif ($request["concern"] === "passwordChange") {
 
             if (array_key_exists('newPassword', $request)) {
