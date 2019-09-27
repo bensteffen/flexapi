@@ -88,12 +88,8 @@ class ACLGuard extends Guard {
         return $responseData;
     }
 
-    public function unregisterUser($username, $password) {
-        // TODO
-        $this->login([
-            'username' => $username,
-            'password' => $password
-        ]);
+    public function unregisterUser($auth) {
+        $this->login($auth);
         foreach ($this->getUserRoles() as $role) {
             $this->withdrawRole($role, $this->username);
         }
@@ -115,6 +111,45 @@ class ACLGuard extends Guard {
             ]);
         }
         return null;
+    }
+
+    public function requestEmailChange($auth, $newEmail) {
+        $this->login($auth);
+        $verificationData = $this->registerUser($newEmail, '');
+        return $verificationData;
+    }
+
+    public function changeEmail($auth, $verificationData) {
+        $this->login($auth);
+        $verifyResult = $this->verifyUser($verificationData);
+        $result = [ 'emailChangeSuccessfull' => false ];
+        if ($verifyResult['verificationSuccessfull']) {
+            $newEmail = $verifyResult['username'];
+            $existingUser = $this->acModel->read('user', [
+                'filter' => [ 'name' => $this->username ],
+                'flatten' => 'singleResult'
+            ]);
+            $password = $existingUser['password'];
+            $this->acModel->update('user', [
+                'name' => $newEmail,
+                'password' => $password
+            ]);
+            foreach ($this->getUserRoles() as $role) {
+                $this->assignRole($role, $newEmail);
+            }
+            $permissions = $this->acModel->read('permission', [
+                'filter' => ['user' => $this->username],
+                'emptyResult' => []
+            ]);
+            foreach ($permissions as $p) {
+                $this->publishResource($newEmail, $p['entityName'], $p['entityId'], $p['methods']);
+            }
+            $this->unregisterUser($auth);
+            $result['emailChangeSuccessfull'] = true;
+            $result['oldEmail'] = $this->username;
+            $result['newEmail'] = $newEmail;
+        }
+        return $result;
     }
 
     public function requestPasswordChange($email, $newPassword) {
@@ -219,10 +254,13 @@ class ACLGuard extends Guard {
     }
 
     public function assignRole($roleName, $userName) {
-        $this->acModel->insert('roleassignment', [
+        $assignment = [
             'role' => $roleName,
             'user' => $userName
-        ]);
+        ];
+        if (!$this->acModel->read('roleassignment', [ 'filter' => $assignment ])) {
+            $this->acModel->insert('roleassignment', $assignment);
+        }
     }
 
     public function withdrawRole($roleName, $userName) {
