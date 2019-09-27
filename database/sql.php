@@ -13,9 +13,9 @@ class SqlCreator implements QueryCreator {
         if ($queryValue->plain) {
             $str = $queryValue->value;
         } else {
-            $str = json_encode($queryValue->value);
+            $str = json_encode($queryValue->value,JSON_UNESCAPED_UNICODE);
             if (is_array($queryValue->value)) {
-                $str = json_encode($str);
+                $str = json_encode($str,JSON_UNESCAPED_UNICODE);
             }
         }
         return $str;

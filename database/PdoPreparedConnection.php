@@ -3,6 +3,7 @@
 include_once __DIR__ . "/IfDatabseConnection.php";
 include_once __DIR__ . "/AbstractSqlConnection.php";
 include_once __DIR__ . "/SqlQueryFactory.php";
+
 include_once __DIR__ . '/../../../bensteffen/bs-php-utils/utils.php';
 
 class PdoPreparedConnection extends AbstractSqlConnection implements IfDatabseConnection {
@@ -18,6 +19,7 @@ class PdoPreparedConnection extends AbstractSqlConnection implements IfDatabseCo
         if (!$this->pdo) {
             $dsn = $credentials['driver'].':host='.$credentials['host'];
             $dsn .= ';dbname='.$credentials['database'];
+            $dsn .= ';charset=utf8';
 
             $options = [
                 PDO::ATTR_EMULATE_PREPARES   => false, // turn off emulation mode for "real" prepared statements
@@ -48,7 +50,6 @@ class PdoPreparedConnection extends AbstractSqlConnection implements IfDatabseCo
     protected function lastInsertId() {
         return $this->pdo->lastInsertId();
     }
-
     protected function checkConnection() {
         if ($this->pdo === null) {
             throw(new Exception('SqlConnection.checkConnection(): No connection established', 500));
