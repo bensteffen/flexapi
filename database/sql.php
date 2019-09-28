@@ -163,6 +163,11 @@ class SqlCreator implements QueryCreator {
 
 class Sql {
     protected static $sqlCreator = null;
+    protected static $escapeService = null;
+
+    public static function setEscapeService($escapeService) {
+        Sql::$escapeService = $escapeService;
+    }
 
     public static function Value($value, $type) {
         return Sql::attachCreator(new QueryValue($value, $type));
@@ -232,7 +237,7 @@ class Sql {
 
     public static function attachCreator($queryElement) {
         if (Sql::$sqlCreator === null) {
-            Sql::$sqlCreator = new SqlCreator();
+            Sql::$sqlCreator = new SqlCreator(Sql::$escapeService);
         }
         $queryElement->setCreator(Sql::$sqlCreator);
         return $queryElement;
