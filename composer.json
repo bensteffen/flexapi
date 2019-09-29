@@ -2,11 +2,11 @@
   "name": "ADFC-Hamburg/flexapi",
   "type": "package",
   "repositories": {
-         "bensteffen/bs-php-utils": {
-          "type": "git",
-             "url": "https://github.com/bensteffen/bs-php-utils"
-         }
-    },
+    "bensteffen/bs-php-utils": {
+      "type": "git",
+      "url": "https://github.com/bensteffen/bs-php-utils"
+    }
+  },
   "require": {
     "firebase/php-jwt": "^5.0",
     "bensteffen/bs-php-utils": "master@dev",
@@ -18,5 +18,5 @@
       "email": "me@ben-steffen.de"
     }
   ],
-  "version": "0.1.17"
+  "version": "0.1.18"
 }
