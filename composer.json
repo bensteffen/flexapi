@@ -1,10 +1,17 @@
 {
-  "name": "ADFC-Hamburg/flexapi",
-  "type": "package",
-  "repositories": {
-    "bensteffen/bs-php-utils": {
-      "type": "git",
-      "url": "https://github.com/bensteffen/bs-php-utils"
+ "name": "ADFC-Hamburg/flexapi",
+ "repositories": {
+    "bs-php-utils": {
+      "type": "package",
+      "package": {
+        "name": "bensteffen/bs-php-utils",
+        "version": "1.1",
+        "source": {
+          "type": "git",
+          "url": "https://github.com/bensteffen/bs-php-utils",
+          "reference": "origin/master"
+        }
+      }
     }
   },
   "require": {
