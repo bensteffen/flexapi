@@ -134,7 +134,7 @@ class EntityMonitor {
         ]);
     }
 
-    protected function getCurrentState($entity, $entityId) {
+    public function getCurrentState($entity, $entityId) {
         return $this->monitoredModel->read($entity->getName(), [
             'filter' => $entity->uniqueFilter($entityId),
             'flatten' => 'singleResult'
@@ -245,11 +245,12 @@ class EntityChange extends IdEntity {
                 ]);
                 $subject = $this->notification['subject'];
                 $body = $this->notification['body'];
+                $currentState = $this->entityMonitor->getCurrentState($entity, $entityId);
                 FlexAPI::sendMail([
                     'from' => $this->notification['from'],
                     'to' => $this->notification['to'],
                     'subject' => $subject($entity->getName()),
-                    'body' => $body($entity->getName(), $entityId, $metaData, $fieldChanges)
+                    'body' => $body($entity->getName(), $currentState, $metaData, $fieldChanges)
                 ]);
             }
         }
