@@ -3,6 +3,7 @@
 include_once __DIR__ . "/IfDatabseConnection.php";
 include_once __DIR__ . "/AbstractSqlConnection.php";
 include_once __DIR__ . "/SqlQueryFactory.php";
+include_once __DIR__ . "/../services/escape/PdoEscapeService.php";
 
 include_once __DIR__ . '/../../../bensteffen/bs-php-utils/utils.php';
 
@@ -28,6 +29,7 @@ class PdoPreparedConnection extends AbstractSqlConnection implements IfDatabseCo
             ];
 
             $this->pdo = new PDO($dsn, $credentials['username'], $credentials['password'], $options);
+            Sql::setEscapeService(new PdoEscapeService($this->pdo));
             $this->checkConnection();
         }
     }

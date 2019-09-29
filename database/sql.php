@@ -2,29 +2,44 @@
 
 include_once __DIR__ . '/../../../bensteffen/bs-php-utils/utils.php';
 include_once __DIR__ . '/query.php';
+include_once __DIR__ . '/../services/escape/MySqlEscapeService.php';
 
 class SqlCreator implements QueryCreator {
     public $useTics = true;
+    private $escapeService = null;
+
+    public function __construct($escapeService = null) {
+        if (!$escapeService) {
+            $escapeService = new MySqlEscapeService();
+        }
+        $this->escapeService = $escapeService;
+    }
 
     public function makeValue($queryValue) {
+        $value = $queryValue->value;
         if ($queryValue->type == 'point') {
-          return sprintf('ST_GeomFromText("POINT(%f %f)")', $queryValue->value[0],$queryValue->value[1]);
+          $x = $this->escapeService->escape($value[0]);
+          $y = $this->escapeService->escape($value[1]);
+          return sprintf('ST_GeomFromText("POINT(%f %f)")', $x, $y);
+        }
+        if ($queryValue->type == 'object') {
+            $str = json_encode($value,JSON_UNESCAPED_UNICODE);
         }
         if ($queryValue->plain) {
             $str = $queryValue->value;
         } else {
-            $str = json_encode($queryValue->value,JSON_UNESCAPED_UNICODE);
-            if (is_array($queryValue->value)) {
-                $str = json_encode($str,JSON_UNESCAPED_UNICODE);
-            }
+            $str = $this->escapeService->escape($value);
         }
         return $str;
     }
 
     public function makeColumn($column) {
+        $this->throwExceptionOnInvalidName($column);
+
         $n = $this->addTics($column->name);
         $t = $this->addTics($column->table);
         $d = $this->addTics($column->database);
+
         $a = $column->alias;
         $refs = $column->references;
         if (count($refs) > 0) {
@@ -122,10 +137,37 @@ class SqlCreator implements QueryCreator {
         };
         return $s;
     }
+
+    protected static function throwExceptionOnInvalidName($column) {
+        if (!SqlCreator::isValidName($column->name)) {
+            throw(new Exception(sprintf('Invalid field name "%s"', $column->name), 500));
+        }
+        if (!SqlCreator::isValidName($column->table)) {
+            throw(new Exception(sprintf('Invalid table name "%s"', $column->table), 500));
+        }
+        if (!SqlCreator::isValidName($column->database)) {
+            throw(new Exception(sprintf('Invalid database name "%s"', $column->database), 500));
+        }
+    }
+
+    protected static function isValidName($name) {
+        /**
+         * Filtert aus $name gültigen String heraus, d.h. nur Buchstaben,
+         * Unterstriche und Ziffern, kürzer 256 Zeichen, keine Ziffer am 
+         * Anfang. Falls nach dem Filtern noch Zeichen verbleiben ( strlen > 0 )
+         * enthält der Name ungültige Zeichen oder ist zu lang.
+         */
+        return strlen(preg_filter('/[_a-zA-Z][_a-zA-Z0-9]{0,255}/', '', $name)) === 0;
+    }
 }
 
 class Sql {
     protected static $sqlCreator = null;
+    protected static $escapeService = null;
+
+    public static function setEscapeService($escapeService) {
+        Sql::$escapeService = $escapeService;
+    }
 
     public static function Value($value, $type) {
         return Sql::attachCreator(new QueryValue($value, $type));
@@ -195,7 +237,7 @@ class Sql {
 
     public static function attachCreator($queryElement) {
         if (Sql::$sqlCreator === null) {
-            Sql::$sqlCreator = new SqlCreator();
+            Sql::$sqlCreator = new SqlCreator(Sql::$escapeService);
         }
         $queryElement->setCreator(Sql::$sqlCreator);
         return $queryElement;
