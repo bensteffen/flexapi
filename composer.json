@@ -1,6 +1,6 @@
 {
- "name": "ADFC-Hamburg/flexapi",
- "repositories": {
+  "name": "ADFC-Hamburg/flexapi",
+  "repositories": {
     "bs-php-utils": {
       "type": "package",
       "package": {
@@ -25,5 +25,5 @@
       "email": "me@ben-steffen.de"
     }
   ],
-  "version": "0.1.19"
+  "version": "0.1.20"
 }
