@@ -9,7 +9,7 @@
   },
   "require": {
     "firebase/php-jwt": "^5.0",
-    "bensteffen/bs-php-utils": "master@dev",
+    "bensteffen/bs-php-utils": "dev-master",
     "phpmailer/phpmailer": "~6.0"
   },
   "authors": [
