@@ -19,7 +19,7 @@ class EntityMonitor {
             new ChangePath()
         ]);
         $this->changeDataModel->setConnection($modelToWatch->getConnection());
-    
+
         foreach($entitiesToWatch as $entityName) {
             // $modelToWatch->addEntity($modelToWatch->getEntity($entityName)); // ???
             $modelToWatch->addObservation([
@@ -61,7 +61,7 @@ class EntityMonitor {
 
         $state = $this->getCurrentState($entity, $entityId);
         $change = $this->getLatestChange($entity, $entityId);
-        
+
         if (!$change) {
             $result = ['newState' => $state];
         }
@@ -107,7 +107,7 @@ class EntityMonitor {
     }
 
     protected function getChangesByPath($entity, $entityId, $pathId) {
-        
+
     }
 
     public function getChangeById($entity, $entityId, $changeId) {
@@ -232,6 +232,7 @@ class EntityChange extends IdEntity {
                 $this->dataModel->update('entitychange', ['id' => $latestChange['id'], 'isHead' => false, 'next' => $nextChangeId]);
             }
             $oldState = $this->entityMonitor->getOldState($entity, $entityId);
+
             $fieldChanges = $this->insertFieldChanges($nextChangeId, $entity, $oldState, $event['data']);
 
             if (count($fieldChanges) && $this->notification) {
@@ -255,7 +256,7 @@ class EntityChange extends IdEntity {
             }
         }
         if ($event['context'] === 'onDelete') {
-            
+
         }
     }
 
@@ -267,12 +268,21 @@ class EntityChange extends IdEntity {
             $isInData = array_key_exists($fieldName, $newState);
             if ($isNotKey && $isInData) {
                 $valueChanged = $oldState[$fieldName] != $newState[$fieldName];
+
+                $oldValue=$oldState[$fieldName];
+                $newValue=$newState[$fieldName];
+
+                if ($entity->getField($fieldName)['type']=='point') {
+                  $oldValue=json_encode($oldValue);
+                  $newValue=json_encode($newValue);
+                }
+
                 if ($valueChanged) {
                     array_push($fieldChanges, [
                         'changeId' => $changeId,
                         'fieldName' => $fieldName,
-                        'oldValue' => $oldState[$fieldName],
-                        'newValue' => $newState[$fieldName]
+                        'oldValue' => $oldValue,
+                        'newValue' => $newValue,
                     ]);
                 }
             }

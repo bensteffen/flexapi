@@ -27,6 +27,9 @@ class SqlCreator implements QueryCreator {
             return 'false';
           }
         }
+        if ($queryValue->type == 'int') {
+          return sprintf('%d', $value);
+        }
         if ($queryValue->type == 'object') {
             $str = json_encode($value,JSON_UNESCAPED_UNICODE);
         }
