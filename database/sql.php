@@ -18,9 +18,7 @@ class SqlCreator implements QueryCreator {
     public function makeValue($queryValue) {
         $value = $queryValue->value;
         if ($queryValue->type == 'point') {
-          $x = $this->escapeService->escape($value[0]);
-          $y = $this->escapeService->escape($value[1]);
-          return sprintf('ST_GeomFromText("POINT(%f %f)")', $x, $y);
+          return sprintf('ST_GeomFromText("POINT(%f %f)")', $value[0], $value[1]);
         }
         if ($queryValue->type == 'boolean') {
           if ($value) {
