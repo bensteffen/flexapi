@@ -22,6 +22,13 @@ class SqlCreator implements QueryCreator {
           $y = $this->escapeService->escape($value[1]);
           return sprintf('ST_GeomFromText("POINT(%f %f)")', $x, $y);
         }
+        if ($queryValue->type == 'boolean') {
+          if ($value) {
+            return 'true';
+          } else {
+            return 'false';
+          }
+        }
         if ($queryValue->type == 'object') {
             $str = json_encode($value,JSON_UNESCAPED_UNICODE);
         }
@@ -153,7 +160,7 @@ class SqlCreator implements QueryCreator {
     protected static function isValidName($name) {
         /**
          * Filtert aus $name gültigen String heraus, d.h. nur Buchstaben,
-         * Unterstriche und Ziffern, kürzer 256 Zeichen, keine Ziffer am 
+         * Unterstriche und Ziffern, kürzer 256 Zeichen, keine Ziffer am
          * Anfang. Falls nach dem Filtern noch Zeichen verbleiben ( strlen > 0 )
          * enthält der Name ungültige Zeichen oder ist zu lang.
          */
