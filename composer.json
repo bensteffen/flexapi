@@ -1,5 +1,5 @@
 {
-  "name": "ADFC-Hamburg/flexapi",
+  "name": "adfc-hamburg/flexapi",
   "repositories": {
     "bs-php-utils": {
       "type": "package",
