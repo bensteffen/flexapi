@@ -29,12 +29,18 @@ class SmtpMailService implements IfMailService {
         $this->mailer->setFrom($from['address'], $from['name']);
     }
 
-    public function send($to, $subject, $body, $altBody = '') {
+    public function send($to, $subject, $body, $altBody = '', $cc = []) {
         if (!is_array($to)) {
             $to = [$to];
         }
         foreach ($to as $address) {
             $this->mailer->addAddress($address, '');
+        }
+        if (!is_array($cc)) {
+            $cc = [$cc];
+        }
+        foreach ($cc as $address) {
+            $this->mailer->addCC($address, '');
         }
 
         $this->mailer->Subject = $subject;
