@@ -34,11 +34,11 @@ class PdoPreparedConnection extends AbstractSqlConnection implements IfDatabseCo
         }
     }
 
-    protected function executeQuery($query) {
+    public function executeQuery($query, $values = null) {
         $statement = null;
         try {
             $statement = $this->pdo->prepare($query);
-            $statement->execute();
+            $statement->execute($values);
         } catch (PDOException $exc) {
             throw(new Exception("Error executing query --> $query <--: ".$exc->getMessage(), 500));
         }
