@@ -233,6 +233,10 @@ class DataModel {
             $data = $this->connection->readFromDatabase($entity, $filter, $regularSelection, false, $sort, $pagination);
         }
 
+        foreach ($data as $i => $d) {
+            $data[$i] = FlexAPI::pipe('output', $entity, $d);
+        }
+
         $this->notifyObservers([
             'subjectName' => $entityName,
             'filter' => $filter,
