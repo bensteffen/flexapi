@@ -22,14 +22,15 @@ class SmtpMailService implements IfMailService {
             $this->mailer->Password = $smtpCredentials['password'];
         }
 
-        $this->mailer->isHTML(true);
         $this->mailer->CharSet = 'UTF-8';
         $this->mailer->Encoding = 'quoted-printable';
 
         $this->mailer->setFrom($from['address'], $from['name']);
     }
 
-    public function send($to, $subject, $body, $altBody = '', $cc = []) {
+
+
+    public function send($to, $subject, $htmlBody, $plainBody = '', $cc = []) {
         if (!is_array($to)) {
             $to = [$to];
         }
@@ -43,10 +44,22 @@ class SmtpMailService implements IfMailService {
             $this->mailer->addCC($address, '');
         }
 
+        if ($htmlBody) {
+            $this->mailer->isHTML(true);
+            $body = $htmlBody;
+            $altBody = $plainBody;
+        } else {
+            $this->mailer->isHTML(false);
+            $body = $plainBody;
+            $altBody = '';
+        }
+
         $this->mailer->Subject = $subject;
         $this->mailer->Body    = $body;
         $this->mailer->AltBody = $altBody; // for non-HTML clients
 
         $this->mailer->send();
+
+        $this->mailer->ClearAllRecipients( );
     }
 }
