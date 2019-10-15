@@ -37,7 +37,14 @@ class QueryValue extends QueryElement {
     public function __construct($value, $type='') {
         $this->value = $value;
         if ($type == '') {
-          trigger_error("Value ohne type", E_USER_WARNING);
+            if (is_string($value)) {
+                $type = 'string';
+            } elseif (is_int($value)) {
+                $type = 'int';
+            }
+        }
+        if ($value !== null && $type == '') {
+            trigger_error("Value ohne type", E_USER_WARNING);
         }
         $this->type = $type;
     }
