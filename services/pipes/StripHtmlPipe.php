@@ -15,7 +15,9 @@ class StripHtmlPipe implements IfEntityDataPipe {
                     $data[$key] = strip_tags($value, $allowedHtml);
                 }
             } else {
-                $data[$key] = strip_tags($value);
+                if (is_string($value)) {
+                    $data[$key] = strip_tags($value);
+                }
             }
         }
         return $data;
