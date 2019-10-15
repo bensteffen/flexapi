@@ -41,6 +41,8 @@ class QueryValue extends QueryElement {
                 $type = 'string';
             } elseif (is_int($value)) {
                 $type = 'int';
+            } elseif (is_bool($value)) {
+                $type = 'boolean';
             }
         }
         if ($value !== null && $type == '') {
