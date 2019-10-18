@@ -135,7 +135,7 @@ class ACLGuard extends Guard {
             'subject' => 'Passwort vergesssen?',
             'body' => sprintf(
                 'Hallo,<br>'.
-                'wenn Du eine Passwort&auml;nderung beauftragt hast, klicke bitte hier  <a href="%s">hier</a>, um die Passwort&auml;nderung vom ADFC Tempo30 vor sozailen Einrichtungen abzuschlie&szlig;en.',
+                'wenn Du eine Passwort&auml;nderung beauftragt hast, klicke bitte hier  <a href="%s">hier</a>, um die Passwort&auml;nderung vom ADFC Tempo30 vor sozialen Einrichtungen abzuschlie&szlig;en.',
                 $url
             )
         ]);
