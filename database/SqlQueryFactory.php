@@ -146,6 +146,8 @@ class SqlQueryFactory {
         switch ($field['type']) {
             case 'varchar':
             case 'text':
+            case 'longtext':
+            case 'object':
                 return '';
             case 'int':
             case 'smallint':
@@ -159,6 +161,8 @@ class SqlQueryFactory {
                 return false;
             case 'date':
                 return '1970-01-01';
+            case 'datetime':
+                return '1970-01-01 00:00:00';
             case 'point':
             case 'polygon':
                 return '';
