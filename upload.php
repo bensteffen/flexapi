@@ -12,8 +12,8 @@ try {
         'code' => 200
     ];
 
-    $fileName = $_POST['fileName'];
     $file = $_FILES['file'];
+    $fileName = $file['name'];
 
     $formatFolders = [
         'application/gpx+xml' => 'gps/',
@@ -38,7 +38,7 @@ try {
         'name' => $fileName,
         'mimeType' => $file['type'],
         'source' => $resourcePath.$saveName
-    ], assocIgnore($_POST, ['format', 'filename']));
+    ], assocIgnore($_GET, ['format', 'filename']));
 
     $response['id'] = $id;
     echo jsenc($response);
