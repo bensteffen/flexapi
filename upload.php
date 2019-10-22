@@ -37,7 +37,8 @@ try {
     $id = FlexAPI::dataModel()->insert('upload', [
         'name' => $fileName,
         'mimeType' => $file['type'],
-        'source' => $resourcePath.$saveName
+        'path' => $resourcePath.$saveName,
+        'source' => FlexAPI::get('appPath').$resourcePath.$saveName
     ], assocIgnore($_GET, ['format', 'filename']));
 
     $response['id'] = $id;
