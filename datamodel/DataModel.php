@@ -354,14 +354,19 @@ class DataModel {
         ]);
 
         if ($this->guard->permissionsNeeded($entityName)) {
-            $this->guard->deletePermitted($this->connection, $entity, $filter);
+            $keys = $this->guard->deletePermitted($this->connection, $entity, $filter);
         } else {
+            $keys = $this->read($entityName, [ 'filter' => $filter, 'selection' => $entity->primaryKeys() ]);
+            if (!$keys) {
+                throw(new Exception('No resources to delete found.', 400));
+            }
             $this->connection->deleteFromDatabase($entity, $filter);
         }
 
         $this->notifyObservers([
             'subjectName' => $entityName,
             'filter' => $filter,
+            'keys' => $keys,
             'context' => 'onDelete'
         ]);
     }
