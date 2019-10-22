@@ -314,7 +314,7 @@ class ACLGuard extends Guard {
 
     public function readPermitted($connection, $entity, $filter, $selection, $sort, $onlyOwn = false) {
         $filter = $this->addPermissionFilter('R', $entity, $filter, $onlyOwn);
-        return $connection->readFromDataBase($entity, $filter, $selection, $onlyOwn, $sort);
+        return $connection->readFromDataBase($entity, $filter, $selection, false, $sort);
     }
 
     public function updatePermitted($connection, $entity, $filter, $data) {
