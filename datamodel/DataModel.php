@@ -128,10 +128,8 @@ class DataModel {
                 'metaData'    => $metaData
             ]);
 
-            $id = $this->connection->insertIntoDatabase(
-                $this->getEntity($entityName),
-                extractArray($entity->fieldNames(),$data)
-            );
+            $data = extractArray($entity->fieldNames(),$data);
+            $id = $this->connection->insertIntoDatabase($entity, $data);
             if (!$id) {
                 $unqiueKey = $entity->uniqueKey();
                 if ($unqiueKey) {
