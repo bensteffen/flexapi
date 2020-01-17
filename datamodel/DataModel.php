@@ -226,7 +226,7 @@ class DataModel {
 
         $permissionNeeded = $this->guard->permissionsNeeded($entityName);
         if ($permissionNeeded || (!$permissionNeeded && $onlyOwn)) {
-            $data = $this->guard->readPermitted($this->connection, $entity, $filter, $regularSelection, $sort, $onlyOwn);
+            $data = $this->guard->readPermitted($this->connection, $entity, $filter, $regularSelection, $sort, $onlyOwn, $pagination);
         } else {
             $data = $this->connection->readFromDatabase($entity, $filter, $regularSelection, false, $sort, $pagination);
         }
