@@ -22,7 +22,10 @@ class DataModel {
     public function __construct() {
         $this->readOptions = new Options([
             'filter' => [],
-            'selection' => [],
+            'selection' => [
+                'select' => [],
+                'exclude' => []
+            ],
             'references' => [
                 'depth' => 1, // options: 'deep' (as deep as possible) or 0 (don't resolve) or 1 or 2 or ...
                 'format' => 'key'   // options: 'data', 'keys', 'url'
@@ -551,10 +554,17 @@ class DataModel {
     }
 
     protected function reshapeSelection($entityName, $selection) {
+        if (!isAssoc($selection)) {
+            $selection = [
+                'select' => $selection,
+                'exclude' => []
+            ];
+        }
+        $select = $selection['select'];
         $invRefs = $this->references->getInverse($entityName);
 
         $invSelection = [];
-        foreach($selection as $field) {
+        foreach($select as $field) {
             $result = array_filter($invRefs, function($r) use($field) { return $r['containerField'] === $field; });
             if (count($result) > 0) {
                 array_push($invSelection, $field);
@@ -563,15 +573,18 @@ class DataModel {
         $addedId = false;
         if(count($invSelection) > 0) {
             $idName = $this->getEntity($entityName)->uniqueKey();
-            if(!in_array($idName, $selection)) {
-                array_unshift($selection, $idName);
+            if(!in_array($idName, $select)) {
+                array_unshift($select, $idName);
                 $addedId = $idName;
             }
         }
-        $regSelection = arrayIgnore($selection, $invSelection);
+        $regSelection = arrayIgnore($select, $invSelection);
 
         $output = [
-            'regular' => $regSelection,
+            'regular' => [
+                'select' => $regSelection,
+                'exclude' => $selection['exclude']
+            ],
             'inverse' => $invSelection,
             'added'   => $addedId
         ];

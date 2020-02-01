@@ -25,8 +25,16 @@ class SqlQueryFactory {
     }
 
     public static function makeSelectQuery($entity, $filter = [], $fieldSelection = [], $distinct = false, $order = [], $pagination = []) {
-        if (count($fieldSelection) === 0) {
-            $fieldSelection = $entity->fieldNames();
+        $includedFields = $fieldSelection['select'];
+        $excludedFields = $fieldSelection['exclude'];
+        if (count($includedFields) === 0) {
+            $includedFields = $entity->fieldNames();
+        }
+        $finalFieldSelection = [];
+        foreach ($includedFields as $in) {
+            if (!in_array($in, $excludedFields)) {
+                array_push($finalFieldSelection, $in);
+            }
         }
         $select = 'SELECT';
         if ($distinct) {
@@ -42,7 +50,7 @@ class SqlQueryFactory {
         }
         return sprintf("%s %s FROM `%s` %s WHERE %s%s%s",
             $select,
-            Sql::Sequence($fieldSelection, function($f) use($entity) {
+            Sql::Sequence($finalFieldSelection, function($f) use($entity) {
               return Sql::Column($f, $entity->getName(), null, $entity->getField($f)['type']);
             })->toQuery(),
             $entity->getName(),

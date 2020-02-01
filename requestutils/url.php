@@ -69,6 +69,11 @@ function parseUrlParameters($queries) {
         $select = explode(',', $queries['select']);
     }
 
+    $exclude = [];
+    if (array_key_exists('exclude', $queries)) {
+        $exclude = explode(',', $queries['exclude']);
+    }
+
     $refs = [];
     if (array_key_exists('refs', $queries)) {
         $refs = getReferenceParameters($queries['refs']);
@@ -112,16 +117,19 @@ function parseUrlParameters($queries) {
     }
 
     return [
-        'do'       => $do,
-        'entity'   => $entityName,
-        'filter'   => $filter,
-        'select'   => $select,
-        'refs'     => $refs,
-        'flatten'  => $flatten,
-        'nores'    => $noresult,
-        'sort'     => $sort,
-        'pages'    => $pages,
-        'onlyOwn'  => $onlyOwn
+        'do'        => $do,
+        'entity'    => $entityName,
+        'filter'    => $filter,
+        'selection' => [
+            'select'   => $select,
+            'exclude'  => $exclude,
+        ],
+        'refs'      => $refs,
+        'flatten'   => $flatten,
+        'nores'     => $noresult,
+        'sort'      => $sort,
+        'pages'     => $pages,
+        'onlyOwn'   => $onlyOwn
     ];
 }
 

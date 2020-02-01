@@ -29,7 +29,7 @@ function flexapiCrud() {
                 $response = FlexAPI::dataModel()->read($parameters['entity'], [
                     'filter'      => $parameters['filter'],
                     'references'  => $parameters['refs'],
-                    'selection'   => $parameters['select'],
+                    'selection'   => $parameters['selection'],
                     'flatten'     => $parameters['flatten'],
                     'emptyResult' => $parameters['nores'],
                     'sort'        => $parameters['sort'],
