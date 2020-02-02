@@ -25,8 +25,13 @@ class SqlQueryFactory {
     }
 
     public static function makeSelectQuery($entity, $filter = [], $fieldSelection = [], $distinct = false, $order = [], $pagination = []) {
-        $includedFields = $fieldSelection['select'];
-        $excludedFields = $fieldSelection['exclude'];
+        if (!isAssoc($fieldSelection)) {
+            $includedFields = $fieldSelection;
+            $excludedFields = [];
+        } else {
+            $includedFields = $fieldSelection['select'];
+            $excludedFields = $fieldSelection['exclude'];
+        }
         if (count($includedFields) === 0) {
             $includedFields = $entity->fieldNames();
         }
