@@ -4,6 +4,8 @@ include_once __DIR__ . '/FlexAPI.php';
 include_once __DIR__ . '/requestutils/jwt.php';
 include_once __DIR__ . '/../../bensteffen/bs-php-utils/utils.php';
 
+header("Content-Type: multipart/form-data; charset=UTF-8");
+
 try {
 
     $response = [
@@ -12,8 +14,16 @@ try {
         'code' => 200
     ];
 
+    if (!count($_FILES)) {
+        throw(new Exception("No files found in upoad-request", 400));
+    }
+
     $file = $_FILES['file'];
     $fileName = $file['name'];
+
+    if (array_key_exists('mimeType', $_POST)) {
+        $file['type'] = $_POST['mimeType'];
+    }
 
     $formatFolders = [
         'application/gpx+xml' => 'gps/',
