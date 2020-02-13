@@ -234,10 +234,6 @@ class DataModel {
             $data = $this->connection->readFromDatabase($entity, $filter, $regularSelection, false, $sort, $pagination);
         }
 
-        foreach ($data as $i => $d) {
-            $data[$i] = FlexAPI::pipe('output', $entity, $d);
-        }
-
         $this->notifyObservers([
             'subjectName' => $entityName,
             'filter' => $filter,
@@ -252,6 +248,10 @@ class DataModel {
             foreach ($data as $i => $d) {
                 $data[$i] = assocIgnore($data[$i], [$selection['added']]);
             }
+        }
+
+        foreach ($data as $i => $d) {
+            $data[$i] = FlexAPI::pipe('output', $entity, $d);
         }
 
         if ($flatten === 'singleResult' && count($data) === 1) {
@@ -361,7 +361,8 @@ class DataModel {
         } else {
             $keys = $this->read($entityName, [ 'filter' => $filter, 'selection' => $entity->primaryKeys() ]);
             if (!$keys) {
-                throw(new Exception('No resources to delete found.', 400));
+                // throw(new Exception('No resources to delete found.', 200));
+                return;
             }
             $this->connection->deleteFromDatabase($entity, $filter);
         }
