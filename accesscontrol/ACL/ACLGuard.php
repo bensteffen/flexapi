@@ -329,10 +329,12 @@ class ACLGuard extends Guard {
         $filter = $this->addPermissionFilter('D', $entity, $filter);
         $keyNames = $entity->primaryKeys();
         $keys = $connection->readFromDataBase($entity, $filter, $keyNames);
-        if (!$keys) {
-            throw(new Exception('No resource to delete found.', 400));
+        // if (!$keys) {
+        //     throw(new Exception('No resource to delete found.', 400));
+        // }
+        if ($keys) {
+            $connection->deleteFromDatabase($entity, $filter);
         }
-        $connection->deleteFromDatabase($entity, $filter);
         return $keys;
     }
 
