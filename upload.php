@@ -20,36 +20,39 @@ try {
 
     $file = $_FILES['file'];
     $fileName = $file['name'];
+    $saveName = time()."--".$fileName;
 
     if (array_key_exists('mimeType', $_POST)) {
         $file['type'] = $_POST['mimeType'];
     }
 
     $formatFolders = [
-        'application/gpx+xml' => 'gps/',
-        'image/jpeg' => 'img/'
+        'application/gpx+xml' => '/gps',
+        'image/jpeg' => '/img'
     ];
 
-    $resourcePath = $formatFolders[$file['type']];
+    $resourcePath = 
+         FlexAPI::get('appPath')
+        .FlexAPI::get('uploadFolder')
+        .'/'.FlexAPI::guard()->getUsername()
+        .$formatFolders[$file['type']];
+    $absPath = $_SERVER['DOCUMENT_ROOT'].$resourcePath;
 
-    $rootFolder = FlexAPI::get('appRoot');
-    $uploadFolder = FlexAPI::get('uploadFolder');
-
-    $resourcePath = $uploadFolder.'/'.FlexAPI::guard()->getUsername().'/'.$resourcePath;
-    $completePath = $rootFolder.$resourcePath;
-    if (!is_dir($completePath)) {
-        mkdir($completePath, 0777, true);
+    if (!is_dir($absPath)) {
+        mkdir($absPath, 0777, true);
     }
-    $saveName = time()."--".$fileName;
-    $savePath = $completePath.$saveName;
-    rename($file['tmp_name'], $savePath);
+    $absPath .= '/'.$saveName;
+    rename($file['tmp_name'], $absPath);
 
-    $id = FlexAPI::dataModel()->insert('upload', [
+    $resourcePath .= '/'.$saveName;
+    $upload = [
         'name' => $fileName,
         'mimeType' => $file['type'],
-        'path' => $resourcePath.$saveName,
-        'source' => FlexAPI::get('appPath').$resourcePath.$saveName
-    ], assocIgnore($_GET, ['format', 'filename']));
+        'path' => $resourcePath,
+        'source' => $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_NAME'].$resourcePath
+    ];
+
+    $id = FlexAPI::dataModel()->insert('upload', $upload , assocIgnore($_GET, ['format', 'filename']));
 
     $response['id'] = $id;
     echo jsenc($response);
