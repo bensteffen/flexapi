@@ -293,7 +293,7 @@ class DataModel {
 
         $entity = $this->getEntity($entityName);
 
-        $data = FlexAPI::pipe('input', $entity, $data);
+        $data = FlexAPI::pipe('input', $entity, $data, null, null);
 
         $this->notifyObservers([
             'subjectName' => $entityName,
