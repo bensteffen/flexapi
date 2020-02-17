@@ -3,7 +3,7 @@
 include_once __DIR__ . '/IfEntityDataPipe.php';
 
 class StripHtmlPipe implements IfEntityDataPipe {
-    public function transform($entity, $data) {
+    public function transform($entity, $data, $index = null, $dataArray = null) {
         foreach($data as $key => $value) {
             $field = $entity->getField($key);
             if ($field) {

@@ -1,5 +1,5 @@
 <?php
 
 interface IfEntityDataPipe {
-    public function transform($entity, $data);
+    public function transform($entity, $data, $index, $dataArray);
 }

@@ -121,7 +121,7 @@ class DataModel {
             $this->throwExceptionOnBadReference($entityName, $data);
 
             $data = $this->stripAutoIncrementKeyFieldPipe->transform($entity, $data);
-            $data = FlexAPI::pipe('input', $entity, $data);
+            $data = FlexAPI::pipe('input', $entity, $data, null, null);
 
             $this->notifyObservers([
                 'subjectName' => $entityName,
@@ -251,7 +251,7 @@ class DataModel {
         }
 
         foreach ($data as $i => $d) {
-            $data[$i] = FlexAPI::pipe('output', $entity, $d);
+            $data[$i] = FlexAPI::pipe('output', $entity, $d, $i, $data);
         }
 
         if ($flatten === 'singleResult' && count($data) === 1) {

@@ -128,9 +128,9 @@ class FlexAPI {
         array_push(FlexAPI::$pipes[$position], $pipe);
     }
 
-    public static function pipe($position, $entity, $data) {
+    public static function pipe($position, $entity, $data, $index, $dataArray) {
         foreach (FlexAPI::$pipes[$position] as $pipe) {
-            $data = $pipe->transform($entity, $data);
+            $data = $pipe->transform($entity, $data, $index, $dataArray);
         }
         return $data;
     }
@@ -144,11 +144,10 @@ class FlexAPI {
     public static function buildUrl($config) {
         $config = setFieldDefault($config, 'scheme', FlexAPI::get('defaultUrlScheme'));
         $queryString = '';
-          $path = sprintf('%s://%s:%s/%s/%s/%s',
-            $config['scheme'],
+          $path = sprintf('%s://%s:%s%s/%s',
+            $_SERVER['REQUEST_SCHEME'],
             $_SERVER['SERVER_NAME'],
             $_SERVER['SERVER_PORT'],
-              FlexAPI::get('basePath'),
               FlexAPI::get('apiPath'),
               $config['endpoint']
         );
