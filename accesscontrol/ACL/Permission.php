@@ -31,7 +31,6 @@ class Permission extends DataEntity {
     }
 
     public function observationUpdate($event) {
-        $key = $event['subjectEntity']->uniqueKey();
         if ($event['context'] === 'onInsert') {
             $entityName = $event['subjectName'];
             if (!$this->guard->permissionsNeeded($entityName)) {
@@ -60,20 +59,13 @@ class Permission extends DataEntity {
             ]);
         } elseif ($event['context'] === 'onDelete') {
             $entityName = $event['subjectName'];
-            $keysToDelete = $this->protectedDataModel->read($entityName, [
-                'filter' => $event['filter'],
-                'selection' => [$this->protectedDataModel->getEntity($entityName)->uniqueKey()],
-                'flatten' => 'singleField',
-                'emptyResult' => [],
-            ]);
-            foreach ($keysToDelete as $key) {
+            $keyName = $event['subjectEntity']->uniqueKey();
+            foreach ($event['keys'] as $key) {
                 $this->dataModel->delete('permission', [
                     'entityName' => $entityName,
-                    'entityId' => $key
+                    'entityId' => $key[$keyName]
                 ]);
             }
         }
     }
 }
-
-
