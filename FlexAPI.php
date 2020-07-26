@@ -18,11 +18,11 @@ class FlexAPI {
     ];
 
     public static function crud() {
-        return json_encode(flexapiCrud());
+        return flexapiCrud();
     }
 
     public static function portal() {
-        return json_encode(flexapiPortal());
+        return flexapiPortal();
     }
 
     public static function define($generatorFunction) {

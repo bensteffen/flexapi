@@ -41,11 +41,20 @@ function flexapiPortal() {
         }
     
         if ($request["concern"] === "login") {
+            FlexAPI::sendEvent([
+                'eventId' => 'before-user-login',
+                'username' => $request['username']
+            ]);
             $token = FlexAPI::guard()->login($request);
             $response = [
                 "message" => "Login sucessfull",
                 "token" => $token,
             ];
+            FlexAPI::sendEvent([
+                'eventId' => 'after-user-login',
+                'username' => $request['username'],
+                "response" => $response
+            ]);
         // TODO: add concern "verify (registration)"
         } elseif ($request["concern"] === "extendLogin") {
             $jwt = getJWT();
@@ -146,7 +155,10 @@ function flexapiPortal() {
     }
     
     http_response_code($response['code']);
-    return $response;
+    return [
+        'request' => $request,
+        'response' => $response
+    ];
 }
 
 

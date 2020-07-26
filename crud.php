@@ -26,6 +26,7 @@ function flexapiCrud() {
     
         switch ($method) {
             case 'GET':
+                $requestBody = [];
                 $response = FlexAPI::dataModel()->read($parameters['entity'], [
                     'filter'      => $parameters['filter'],
                     'references'  => $parameters['refs'],
@@ -57,6 +58,7 @@ function flexapiCrud() {
                 ];
                 break;
             case 'DELETE':
+                $requestBody = [];
                 FlexAPI::dataModel()->delete($parameters['entity'], $parameters['filter']);
                 $response = [
                     'serverity' => 1,
@@ -79,7 +81,13 @@ function flexapiCrud() {
     }
 
     http_response_code($responseCode);
-    return $response;
+    return [
+        'request' => [
+            'method' => $method,
+            'body' => $requestBody
+        ],
+        'response' => $response
+    ];
 }
 
 
