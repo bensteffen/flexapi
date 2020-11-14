@@ -1,7 +1,6 @@
 <?php
 
-const JWT_HEADER_NAME='Access-Control-Allow-Credentials';
-function getJWT() {
+function getJWT($header_name = 'Authorization') {
     if (!function_exists('getallheaders')) {
         function getallheaders() {
             $headers = [];
@@ -15,10 +14,10 @@ function getJWT() {
     }
     $http_header = getallheaders();
     $jwt = null;
-    if (array_key_exists(JWT_HEADER_NAME, $http_header)) {
-        $jwt = $http_header[JWT_HEADER_NAME];
-    } elseif (array_key_exists(strtolower(JWT_HEADER_NAME), $http_header)) {
-        $jwt = $http_header[strtolower(JWT_HEADER_NAME)];
+    if (array_key_exists($header_name, $http_header)) {
+        $jwt = $http_header[$header_name];
+    } elseif (array_key_exists(strtolower($header_name), $http_header)) {
+        $jwt = $http_header[strtolower($header_name)];
     }
     $jwt = str_replace('Bearer ','', $jwt);
     return $jwt;
